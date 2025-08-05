@@ -2,7 +2,7 @@
 
 ## Overview
 
-IBX is a real-time chat application built with a modern full-stack architecture. The application provides Discord-like functionality with multiple chat rooms, file sharing capabilities, user presence indicators, and a responsive design. Users can register with usernames and profile images, join different themed chat rooms, send text messages and files, and see who's currently online.
+IBX is a real-time chat application built with a modern full-stack architecture. The application provides Discord-like functionality with multiple chat rooms, file sharing capabilities, user presence indicators, and a responsive design. Users can register with usernames and profile images, join different themed chat rooms, send text messages and files, and see who's currently online. The first registered user becomes the admin with full channel management capabilities including creating and deleting channels through an integrated admin panel.
 
 ## User Preferences
 
@@ -35,12 +35,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication and Authorization
 - **User Management**: Simple username-based registration without passwords
-- **Session Persistence**: LocalStorage for client-side user session management
+- **Admin System**: First registered user automatically becomes admin with channel management rights
+- **Session Persistence**: LocalStorage for client-side user session management with automatic login
 - **User Status**: Real-time presence indicators (online, away, busy)
 - **Profile System**: User avatars and customizable profile images
 
 ### Data Models
-- **Users**: ID, username, profile image, status, last seen timestamp
+- **Users**: ID, username, profile image, status, admin flag, last seen timestamp
 - **Rooms**: ID, name, description, message count for each chat room
 - **Messages**: ID, room association, user association, content, message type, file metadata, timestamps
 

@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import multer from "multer";
 import path from "path";
 import { storage } from "./storage";
-import { insertUserSchema, insertMessageSchema } from "@shared/schema";
+import { insertUserSchema, insertMessageSchema, insertRoomSchema } from "@shared/schema";
 import { z } from "zod";
 
 // Configure multer for file uploads
@@ -95,6 +95,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(room);
     } catch (error) {
       res.status(500).json({ message: "Oda alınamadı" });
+    }
+  });
+
+  // Admin: Create new room
+  app.post("/api/rooms", async (req, res) => {
+    try {
+      const roomData = insertRoomSchema.parse(req.body);
+      const { userId } = req.body;
+      
+      // Check if user is admin
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ message: "Sadece yöneticiler oda oluşturabilir" });
+      }
+      
+      // Check if room name already exists
+      const existingRoom = await storage.getRoomByName(roomData.name);
+      if (existingRoom) {
+        return res.status(400).json({ message: "Bu oda adı zaten kullanılıyor" });
+      }
+      
+      const room = await storage.createRoom(roomData);
+      res.json(room);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Oda oluşturulamadı" });
+    }
+  });
+
+  // Admin: Delete room
+  app.delete("/api/rooms/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { userId } = req.body;
+      
+      // Check if user is admin
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ message: "Sadece yöneticiler oda silebilir" });
+      }
+      
+      const success = await storage.deleteRoom(id);
+      if (!success) {
+        return res.status(404).json({ message: "Oda bulunamadı" });
+      }
+      
+      res.json({ message: "Oda silindi" });
+    } catch (error) {
+      res.status(500).json({ message: "Oda silinemedi" });
     }
   });
 

@@ -15,6 +15,7 @@ export interface IStorage {
   createRoom(room: InsertRoom): Promise<Room>;
   getAllRooms(): Promise<RoomWithMessageCount[]>;
   incrementRoomMessageCount(roomId: string): Promise<void>;
+  deleteRoom(id: string): Promise<boolean>;
 
   // Messages
   getMessage(id: string): Promise<Message | undefined>;
@@ -70,11 +71,13 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
+    const isFirstUser = this.users.size === 0; // İlk kullanıcı otomatik admin olacak
     const user: User = { 
       id,
       username: insertUser.username,
       profileImage: insertUser.profileImage || null,
       status: insertUser.status || "online",
+      isAdmin: isFirstUser, // İlk kullanıcı admin
       lastSeen: new Date(),
     };
     this.users.set(id, user);
@@ -182,6 +185,26 @@ export class MemStorage implements IStorage {
       }
     }
     return messagesWithUsers;
+  }
+
+  async deleteRoom(id: string): Promise<boolean> {
+    const room = this.rooms.get(id);
+    if (!room) {
+      return false;
+    }
+    
+    // Delete all messages in the room
+    const messagesToDelete = Array.from(this.messages.entries())
+      .filter(([_, message]) => message.roomId === id)
+      .map(([messageId, _]) => messageId);
+    
+    messagesToDelete.forEach(messageId => {
+      this.messages.delete(messageId);
+    });
+    
+    // Delete the room
+    this.rooms.delete(id);
+    return true;
   }
 }
 

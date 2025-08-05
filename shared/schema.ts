@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   username: text("username").notNull(),
   profileImage: text("profile_image"),
   status: text("status").notNull().default("online"), // online, away, busy
+  isAdmin: boolean("is_admin").default(false),
   lastSeen: timestamp("last_seen").defaultNow(),
 });
 

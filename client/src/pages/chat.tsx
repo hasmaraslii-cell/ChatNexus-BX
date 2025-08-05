@@ -30,7 +30,7 @@ export default function Chat() {
     }
   }, [rooms, currentRoom]);
 
-  // Check if user is already registered
+  // Check if user is already registered (auto-login)
   useEffect(() => {
     const savedUser = localStorage.getItem("ibx-user");
     if (savedUser) {
@@ -38,6 +38,14 @@ export default function Chat() {
         const user = JSON.parse(savedUser);
         setCurrentUser(user);
         setShowRegistration(false);
+        
+        // Update user status to online automatically
+        fetch(`/api/users/${user.id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'online' })
+        }).catch(console.error);
+        
       } catch (error) {
         localStorage.removeItem("ibx-user");
       }
@@ -53,6 +61,13 @@ export default function Chat() {
 
   const handleRoomChange = (room: Room) => {
     setCurrentRoom(room);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("ibx-user");
+    setCurrentUser(null);
+    setCurrentRoom(null);
+    setShowRegistration(true);
   };
 
   if (showRegistration) {
@@ -77,6 +92,7 @@ export default function Chat() {
         currentRoom={currentRoom}
         currentUser={currentUser}
         onRoomChange={handleRoomChange}
+        onLogout={handleLogout}
       />
       <MainChatArea
         currentRoom={currentRoom}

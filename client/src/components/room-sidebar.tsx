@@ -1,5 +1,12 @@
-import { Hash, Plus, Settings, User } from "lucide-react";
+import { Hash, Plus, Settings, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import AdminPanel from "@/components/admin-panel";
 import type { Room, User as UserType } from "@shared/schema";
 
 interface RoomSidebarProps {
@@ -7,23 +14,19 @@ interface RoomSidebarProps {
   currentRoom: Room;
   currentUser: UserType;
   onRoomChange: (room: Room) => void;
+  onLogout?: () => void;
 }
 
 export default function RoomSidebar({ 
   rooms, 
   currentRoom, 
   currentUser, 
-  onRoomChange 
+  onRoomChange,
+  onLogout
 }: RoomSidebarProps) {
   const getMessageCount = (room: Room) => {
-    // In a real app, this would come from the room data
-    const counts: Record<string, number> = {
-      "genel-sohbet": 24,
-      "random": 8,
-      "oyun": 2,
-      "müzik": 0,
-    };
-    return counts[room.name] || 0;
+    // Use real message count from room data
+    return room.messageCount || 0;
   };
 
   const getCountColor = (count: number) => {
@@ -38,14 +41,19 @@ export default function RoomSidebar({
       <div className="p-4 border-b border-[var(--discord-dark)]">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-[var(--discord-blurple)]">IBX</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
-            title="Yeni Oda Ekle"
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
+          {currentUser.isAdmin && (
+            <div className="flex items-center space-x-1">
+              <span className="text-xs text-[var(--discord-yellow)]">👑</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
+                title="Yönetici - Yeni Kanal Ekle"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
       
@@ -84,6 +92,9 @@ export default function RoomSidebar({
         </div>
       </div>
       
+      {/* Admin Panel */}
+      <AdminPanel currentUser={currentUser} rooms={rooms} />
+      
       {/* User Info */}
       <div className="p-3 border-t border-[var(--discord-dark)]">
         <div className="flex items-center space-x-3">
@@ -101,17 +112,37 @@ export default function RoomSidebar({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate text-[var(--discord-light)]">
               {currentUser.username}
+              {currentUser.isAdmin && (
+                <span className="ml-2 text-xs text-[var(--discord-yellow)]">👑</span>
+              )}
             </p>
             <p className="text-xs text-[var(--discord-light)]/50">Çevrimiçi</p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-1"
-            title="Ayarlar"
-          >
-            <Settings className="w-4 h-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-1"
+                title="Kullanıcı Menüsü"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              className="bg-[var(--discord-darker)] border-[var(--discord-dark)]"
+              side="top"
+              align="end"
+            >
+              <DropdownMenuItem 
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                onClick={onLogout}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Çıkış Yap
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>
