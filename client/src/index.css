@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(231, 81%, 67%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  
+  /* Discord-like colors */
+  --discord-blurple: hsl(235, 86%, 65%);
+  --discord-dark: hsl(220, 7%, 23%);
+  --discord-darker: hsl(223, 7%, 20%);
+  --discord-darkest: hsl(220, 8%, 13%);
+  --discord-light: hsl(210, 9%, 87%);
+  --discord-green: hsl(139, 100%, 41%);
+  --discord-yellow: hsl(38, 96%, 54%);
+}
+
+.dark {
+  --background: hsl(220, 8%, 13%);
+  --foreground: hsl(210, 9%, 87%);
+  --muted: hsl(223, 7%, 20%);
+  --muted-foreground: hsl(210, 5%, 65%);
+  --popover: hsl(223, 7%, 20%);
+  --popover-foreground: hsl(210, 9%, 87%);
+  --card: hsl(223, 7%, 20%);
+  --card-foreground: hsl(210, 9%, 87%);
+  --border: hsl(220, 7%, 23%);
+  --input: hsl(220, 7%, 23%);
+  --primary: hsl(235, 86%, 65%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(223, 7%, 20%);
+  --secondary-foreground: hsl(210, 9%, 87%);
+  --accent: hsl(223, 7%, 20%);
+  --accent-foreground: hsl(210, 9%, 87%);
+  --destructive: hsl(0, 63%, 31%);
+  --destructive-foreground: hsl(210, 9%, 87%);
+  --ring: hsl(212, 12%, 84%);
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    background-color: var(--discord-darkest);
+    color: var(--discord-light);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--discord-darker);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--discord-dark);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(220, 7%, 30%);
+}
+
+/* Animation utilities */
+.animate-bounce-slow {
+  animation: bounce 2s infinite;
+}
+
+.animate-bounce-delay-1 {
+  animation: bounce 2s infinite;
+  animation-delay: 0.2s;
+}
+
+.animate-bounce-delay-2 {
+  animation: bounce 2s infinite;
+  animation-delay: 0.4s;
+}
+
+/* Message hover effects */
+.message-group:hover {
+  background-color: hsla(220, 7%, 23%, 0.5);
+}
+
+/* File upload drag and drop styles */
+.file-drop-zone {
+  transition: all 0.2s ease-in-out;
+}
+
+.file-drop-zone.dragover {
+  border-color: var(--discord-blurple);
+  background-color: hsla(235, 86%, 65%, 0.1);
+}
+
+/* Status indicator styles */
+.status-online {
+  background-color: var(--discord-green);
+}
+
+.status-away {
+  background-color: var(--discord-yellow);
+}
+
+.status-busy {
+  background-color: hsl(359, 83%, 59%);
+}
+
+.status-offline {
+  background-color: hsl(214, 9%, 50%);
+}
