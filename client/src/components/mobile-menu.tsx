@@ -39,7 +39,6 @@ interface MobileMenuProps {
   onLogout: () => void;
   onEditProfile?: (user: User) => void;
   onBanUser?: (user: User) => void;
-  onReorderRooms?: (rooms: Room[]) => void;
 }
 
 export default function MobileMenu({
@@ -51,14 +50,10 @@ export default function MobileMenu({
   onRoomChange,
   onLogout,
   onEditProfile,
-  onBanUser,
-  onReorderRooms
+  onBanUser
 }: MobileMenuProps) {
   const [showOnline, setShowOnline] = useState(true);
   const [showOffline, setShowOffline] = useState(false);
-  const [isReordering, setIsReordering] = useState(false);
-  const [draggedRoom, setDraggedRoom] = useState<Room | null>(null);
-  const [draggedOver, setDraggedOver] = useState<string | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -86,40 +81,7 @@ export default function MobileMenu({
     return colors[userId.length % colors.length];
   };
 
-  const handleDragStart = (e: React.DragEvent<HTMLButtonElement>, room: Room) => {
-    setDraggedRoom(room);
-    e.dataTransfer.effectAllowed = "move";
-  };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, roomId: string) => {
-    e.preventDefault();
-    setDraggedOver(roomId);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedRoom(null);
-    setDraggedOver(null);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetRoom: Room) => {
-    e.preventDefault();
-    
-    if (!draggedRoom || !onReorderRooms || draggedRoom.id === targetRoom.id) {
-      return;
-    }
-
-    const newRooms = [...rooms];
-    const draggedIndex = newRooms.findIndex(r => r.id === draggedRoom.id);
-    const targetIndex = newRooms.findIndex(r => r.id === targetRoom.id);
-
-    if (draggedIndex !== -1 && targetIndex !== -1) {
-      newRooms.splice(draggedIndex, 1);
-      newRooms.splice(targetIndex, 0, draggedRoom);
-      onReorderRooms(newRooms);
-    }
-
-    handleDragEnd();
-  };
 
   const handleUserAction = (user: User, action: "edit" | "ban") => {
     if (action === "edit" && onEditProfile) {
@@ -153,15 +115,6 @@ export default function MobileMenu({
               {currentUser.isAdmin && (
                 <div className="flex items-center space-x-1">
                   <Crown className="w-4 h-4 text-[var(--discord-yellow)]" />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsReordering(!isReordering)}
-                    className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
-                    title={isReordering ? "Düzenlemeyi Bitir" : "Odaları Sırala"}
-                  >
-                    {isReordering ? <Settings className="w-4 h-4" /> : <GripVertical className="w-4 h-4" />}
-                  </Button>
                 </div>
               )}
             </div>
@@ -174,36 +127,22 @@ export default function MobileMenu({
                 <h3 className="text-xs uppercase text-[var(--discord-light)]/50 font-semibold">
                   Odalar
                 </h3>
-                {isReordering && (
-                  <span className="text-xs text-[var(--discord-yellow)]">Sürükleyerek sırala</span>
-                )}
               </div>
               
               {rooms.map((room) => {
                 const messageCount = room.messageCount || 0;
                 const isActive = currentRoom.id === room.id;
-                const isDraggedOver = draggedOver === room.id;
                 
                 return (
-                  <div 
-                    key={room.id} 
-                    className={`mb-1 ${isDraggedOver ? 'border-t-2 border-[var(--discord-blurple)]' : ''}`}
-                    onDragOver={(e) => handleDragOver(e, room.id)}
-                    onDrop={(e) => handleDrop(e, room)}
-                  >
+                  <div key={room.id} className="mb-1">
                     <Button
                       variant="ghost"
-                      draggable={!!(isReordering && currentUser.isAdmin)}
-                      onDragStart={(e) => handleDragStart(e, room)}
-                      onDragEnd={handleDragEnd}
-                      className={`w-full justify-start px-3 py-2.5 h-auto hover:bg-[var(--discord-dark)] transition-colors group text-sm ${
-                        isActive ? "bg-[var(--discord-dark)]/50" : ""
-                      } ${isReordering ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
-                      onClick={() => !isReordering && onRoomChange(room)}
+                      className={`w-full justify-start px-3 py-2.5 h-auto hover:bg-[var(--discord-dark)] transition-colors group text-sm cursor-pointer ${
+                        isActive ? "bg-[var(--discord-dark)]/50 border-l-2 border-[var(--discord-blurple)]" : ""
+                      }`}
+                      onClick={() => onRoomChange(room)}
+                      data-testid={`room-${room.name}`}
                     >
-                      {isReordering && currentUser.isAdmin && (
-                        <GripVertical className="w-4 h-4 text-[var(--discord-light)]/50 mr-1" />
-                      )}
                       <Hash className="text-[var(--discord-light)]/50 text-sm mr-2 w-4 h-4" />
                       <span className="flex-1 text-left text-[var(--discord-light)]">
                         {room.name}

@@ -110,34 +110,7 @@ export default function Chat() {
   };
 
   // Room reordering mutation
-  const reorderRoomsMutation = useMutation({
-    mutationFn: async (reorderedRooms: Room[]) => {
-      const response = await apiRequest("PUT", "/api/rooms/reorder", {
-        rooms: reorderedRooms.map((room, index) => ({ id: room.id, order: index }))
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
-      toast({
-        title: "Başarılı",
-        description: "Odalar yeniden sıralandı",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Hata",
-        description: error.message || "Odalar yeniden sıralanamadı",
-        variant: "destructive",
-      });
-    },
-  });
 
-  const handleReorderRooms = useCallback((reorderedRooms: Room[]) => {
-    if (currentUser?.isAdmin) {
-      reorderRoomsMutation.mutate(reorderedRooms);
-    }
-  }, [currentUser?.isAdmin, reorderRoomsMutation]);
 
   const handleReply = useCallback((message: MessageWithUser) => {
     setReplyToMessage(message);
@@ -164,41 +137,7 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen overflow-hidden relative">
-      {/* Discord-like Mobile Header */}
-      {isMobile && (
-        <div className="absolute top-0 left-0 right-0 z-50 bg-[var(--discord-darker)] border-b border-[var(--discord-dark)] px-4 py-3">
-          <div className="flex items-center justify-between">
-            <MobileMenu
-              rooms={Array.isArray(rooms) ? rooms : []}
-              currentRoom={currentRoom}
-              currentUser={currentUser}
-              onlineUsers={Array.isArray(onlineUsers) ? onlineUsers : []}
-              offlineUsers={Array.isArray(offlineUsers) ? offlineUsers : []}
-              onRoomChange={handleRoomChange}
-              onLogout={handleLogout}
-              onEditProfile={handleEditProfile}
-              onBanUser={handleBanUser}
-              onReorderRooms={handleReorderRooms}
-            />
-            
-            <div className="flex items-center space-x-2">
-              <Hash className="w-4 h-4 text-[var(--discord-light)]/70" />
-              <span className="text-[var(--discord-light)] font-semibold text-sm">
-                {currentRoom.name}
-              </span>
-            </div>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowUserSidebar(!showUserSidebar)}
-              className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2"
-            >
-              <Users className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-      )}
+
 
       {/* Room Sidebar */}
       <div className={`${
@@ -218,7 +157,7 @@ export default function Chat() {
       </div>
 
       {/* Main Chat Area */}
-      <div className={`flex-1 flex flex-col ${isMobile ? 'pt-16' : ''}`}>
+      <div className="flex-1 flex flex-col overflow-hidden">
         <MainChatArea
           currentRoom={currentRoom}
           currentUser={currentUser}
