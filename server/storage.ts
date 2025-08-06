@@ -7,7 +7,11 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserStatus(id: string, status: string): Promise<User | undefined>;
+  updateUserProfile(id: string, username: string, profileImage?: string): Promise<User | undefined>;
+  banUser(id: string, bannedUntil: Date | null): Promise<User | undefined>;
   getOnlineUsers(): Promise<User[]>;
+  getOfflineUsers(): Promise<User[]>;
+  getAllUsers(): Promise<User[]>;
 
   // Rooms
   getRoom(id: string): Promise<Room | undefined>;
@@ -20,6 +24,8 @@ export interface IStorage {
   // Messages
   getMessage(id: string): Promise<Message | undefined>;
   createMessage(message: InsertMessage): Promise<Message>;
+  updateMessage(id: string, content: string): Promise<Message | undefined>;
+  deleteMessage(id: string): Promise<boolean>;
   getMessagesByRoom(roomId: string, limit?: number): Promise<MessageWithUser[]>;
   getAllMessages(): Promise<MessageWithUser[]>;
 }
@@ -79,6 +85,7 @@ export class MemStorage implements IStorage {
       status: insertUser.status || "online",
       isAdmin: isFirstUser, // İlk kullanıcı admin
       lastSeen: new Date(),
+      bannedUntil: null,
     };
     this.users.set(id, user);
     return user;
@@ -94,8 +101,49 @@ export class MemStorage implements IStorage {
     return undefined;
   }
 
+  async updateUserProfile(id: string, username: string, profileImage?: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (user) {
+      const updatedUser = { 
+        ...user, 
+        username, 
+        profileImage: profileImage || user.profileImage,
+        lastSeen: new Date() 
+      };
+      this.users.set(id, updatedUser);
+      return updatedUser;
+    }
+    return undefined;
+  }
+
+  async banUser(id: string, bannedUntil: Date | null): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (user) {
+      const updatedUser = { ...user, bannedUntil, lastSeen: new Date() };
+      this.users.set(id, updatedUser);
+      return updatedUser;
+    }
+    return undefined;
+  }
+
   async getOnlineUsers(): Promise<User[]> {
-    return Array.from(this.users.values()).filter(user => user.status === "online");
+    const now = new Date();
+    return Array.from(this.users.values()).filter(user => 
+      user.status === "online" && 
+      (!user.bannedUntil || user.bannedUntil < now)
+    );
+  }
+
+  async getOfflineUsers(): Promise<User[]> {
+    const now = new Date();
+    return Array.from(this.users.values()).filter(user => 
+      (user.status === "offline" || user.status !== "online") && 
+      (!user.bannedUntil || user.bannedUntil < now)
+    );
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
   }
 
   // Rooms
@@ -151,6 +199,8 @@ export class MemStorage implements IStorage {
       filePath: insertMessage.filePath || null,
       fileSize: insertMessage.fileSize || null,
       createdAt: new Date(),
+      editedAt: null,
+      replyToId: insertMessage.replyToId || null,
     };
     this.messages.set(id, message);
     await this.incrementRoomMessageCount(insertMessage.roomId);
@@ -171,6 +221,20 @@ export class MemStorage implements IStorage {
       }
     }
     return messagesWithUsers;
+  }
+
+  async updateMessage(id: string, content: string): Promise<Message | undefined> {
+    const message = this.messages.get(id);
+    if (message) {
+      const updatedMessage = { ...message, content, editedAt: new Date() };
+      this.messages.set(id, updatedMessage);
+      return updatedMessage;
+    }
+    return undefined;
+  }
+
+  async deleteMessage(id: string): Promise<boolean> {
+    return this.messages.delete(id);
   }
 
   async getAllMessages(): Promise<MessageWithUser[]> {

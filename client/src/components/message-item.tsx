@@ -1,16 +1,26 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Reply, Download, Play, User } from "lucide-react";
-import type { MessageWithUser } from "@shared/schema";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Copy, Reply, Download, User, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import type { MessageWithUser, User as UserType } from "@shared/schema";
 
 interface MessageItemProps {
   message: MessageWithUser;
+  currentUser?: UserType;
+  onReply?: (message: MessageWithUser) => void;
 }
 
-export default function MessageItem({ message }: MessageItemProps) {
+export default function MessageItem({ message, currentUser, onReply }: MessageItemProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content || "");
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const touchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const formatTime = (date: Date | null) => {
     if (!date) return "şimdi";
@@ -19,6 +29,59 @@ export default function MessageItem({ message }: MessageItemProps) {
       minute: "2-digit",
     });
   };
+
+  const editMessageMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const response = await fetch(`/api/messages/${message.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, userId: currentUser?.id }),
+      });
+      if (!response.ok) throw new Error("Mesaj güncellenemedi");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Başarılı",
+        description: "Mesaj güncellendi",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/rooms/${message.roomId}/messages`] });
+      setIsEditing(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Hata",
+        description: error.message || "Mesaj güncellenemedi",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMessageMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/messages/${message.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser?.id }),
+      });
+      if (!response.ok) throw new Error("Mesaj silinemedi");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Başarılı",
+        description: "Mesaj silindi",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/rooms/${message.roomId}/messages`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Hata",
+        description: error.message || "Mesaj silinemedi",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleCopyMessage = async () => {
     try {
@@ -35,6 +98,80 @@ export default function MessageItem({ message }: MessageItemProps) {
       });
     }
   };
+
+  const handleReply = () => {
+    if (onReply) {
+      onReply(message);
+    }
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditContent(message.content || "");
+  };
+
+  const handleSaveEdit = () => {
+    if (editContent.trim() && editContent !== message.content) {
+      editMessageMutation.mutate(editContent.trim());
+    } else {
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent(message.content || "");
+  };
+
+  const handleDelete = () => {
+    if (window.confirm("Bu mesajı silmek istediğinizden emin misiniz?")) {
+      deleteMessageMutation.mutate();
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowContextMenu(true);
+  };
+
+  const handleTouchStart = () => {
+    touchTimeoutRef.current = setTimeout(() => {
+      setShowContextMenu(true);
+    }, 500); // 500ms long press
+  };
+
+  const handleTouchEnd = () => {
+    if (touchTimeoutRef.current) {
+      clearTimeout(touchTimeoutRef.current);
+      touchTimeoutRef.current = null;
+    }
+  };
+
+  const renderContentWithLinks = (content: string) => {
+    // Simple URL regex
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = content.split(urlRegex);
+    
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--discord-blurple)] hover:underline"
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
+  const canEdit = currentUser && (message.user.id === currentUser.id || currentUser.isAdmin);
+  const canDelete = currentUser && (message.user.id === currentUser.id || currentUser.isAdmin);
 
   const handleDownloadFile = async () => {
     if (!message.fileName) return;
@@ -105,7 +242,12 @@ export default function MessageItem({ message }: MessageItemProps) {
   }
 
   return (
-    <div className="message-group flex items-start space-x-3 p-2 rounded-lg transition-colors">
+    <div 
+      className="message-group flex items-start space-x-3 p-2 rounded-lg transition-colors group hover:bg-[var(--discord-dark)]/30"
+      onContextMenu={handleContextMenu}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* User Avatar */}
       <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${getUserColor(message.user.id)}`}>
         {message.user.profileImage ? (
@@ -127,13 +269,55 @@ export default function MessageItem({ message }: MessageItemProps) {
           <span className="text-xs text-[var(--discord-light)]/50">
             {formatTime(message.createdAt)}
           </span>
+          {message.editedAt && (
+            <span className="text-xs text-[var(--discord-light)]/30">(düzenlendi)</span>
+          )}
         </div>
         
         {/* Text Content */}
         {message.content && (
-          <p className="text-[var(--discord-light)] leading-relaxed mb-3">
-            {message.content}
-          </p>
+          <div className="mb-3">
+            {isEditing ? (
+              <div className="space-y-2">
+                <Input
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="bg-[var(--discord-dark)] border-[var(--discord-light)]/20 text-[var(--discord-light)]"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSaveEdit();
+                    }
+                    if (e.key === "Escape") {
+                      handleCancelEdit();
+                    }
+                  }}
+                />
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    onClick={handleSaveEdit}
+                    disabled={editMessageMutation.isPending}
+                    className="bg-[var(--discord-blurple)] hover:bg-[var(--discord-blurple)]/80"
+                  >
+                    Kaydet
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCancelEdit}
+                    className="text-[var(--discord-light)]/70"
+                  >
+                    İptal
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-[var(--discord-light)] leading-relaxed">
+                {renderContentWithLinks(message.content)}
+              </p>
+            )}
+          </div>
         )}
         
         {/* Image Content */}
@@ -232,24 +416,52 @@ export default function MessageItem({ message }: MessageItemProps) {
       </div>
       
       {/* Message Actions */}
-      <div className="opacity-0 group-hover:opacity-100 flex space-x-1 transition-opacity">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-[var(--discord-light)]/50 hover:text-[var(--discord-light)] p-1"
-          title="Kopyala"
-          onClick={handleCopyMessage}
-        >
-          <Copy className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-[var(--discord-light)]/50 hover:text-[var(--discord-light)] p-1"
-          title="Yanıtla"
-        >
-          <Reply className="w-4 h-4" />
-        </Button>
+      <div className="opacity-0 group-hover:opacity-100 flex items-start transition-opacity">
+        <DropdownMenu open={showContextMenu} onOpenChange={setShowContextMenu}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-[var(--discord-light)]/50 hover:text-[var(--discord-light)] p-1"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-[var(--discord-darker)] border-[var(--discord-dark)]">
+            <DropdownMenuItem
+              onClick={handleReply}
+              className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
+            >
+              <Reply className="w-4 h-4 mr-2" />
+              Yanıtla
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleCopyMessage}
+              className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Kopyala
+            </DropdownMenuItem>
+            {canEdit && (
+              <DropdownMenuItem
+                onClick={handleEdit}
+                className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Düzenle
+              </DropdownMenuItem>
+            )}
+            {canDelete && (
+              <DropdownMenuItem
+                onClick={handleDelete}
+                className="text-red-400 hover:bg-[var(--discord-dark)]"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Sil
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

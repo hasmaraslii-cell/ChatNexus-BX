@@ -4,7 +4,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Hash, Paperclip, Search, Bell, Plus, Smile, Send } from "lucide-react";
+import { Hash, Paperclip, Search, Bell, Plus, Smile, Send, X } from "lucide-react";
 import MessageItem from "@/components/message-item";
 import FileUploadArea from "@/components/file-upload-area";
 import type { Room, User, MessageWithUser } from "@shared/schema";
@@ -12,9 +12,12 @@ import type { Room, User, MessageWithUser } from "@shared/schema";
 interface MainChatAreaProps {
   currentRoom: Room;
   currentUser: User;
+  replyToMessage?: MessageWithUser | null;
+  onClearReply?: () => void;
+  onReply?: (message: MessageWithUser) => void;
 }
 
-export default function MainChatArea({ currentRoom, currentUser }: MainChatAreaProps) {
+export default function MainChatArea({ currentRoom, currentUser, replyToMessage, onClearReply, onReply }: MainChatAreaProps) {
   const [message, setMessage] = useState("");
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -163,8 +166,27 @@ export default function MainChatArea({ currentRoom, currentUser }: MainChatAreaP
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {Array.isArray(messages) && messages.map((msg: MessageWithUser) => (
-          <MessageItem key={msg.id} message={msg} />
+          <MessageItem 
+            key={msg.id} 
+            message={msg} 
+            currentUser={currentUser}
+            onReply={onReply}
+          />
         ))}
+        
+        {(!messages || !Array.isArray(messages) || messages.length === 0) && (
+          <div className="flex items-center justify-center flex-1">
+            <div className="text-center">
+              <Hash className="w-16 h-16 text-[var(--discord-light)]/20 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-[var(--discord-light)] mb-2">
+                #{currentRoom.name} kanalına hoş geldiniz!
+              </h3>
+              <p className="text-[var(--discord-light)]/50">
+                Bu kanalın başlangıcıdasınız.
+              </p>
+            </div>
+          </div>
+        )}
         
         {/* Typing Indicator */}
         {isTyping && (
@@ -183,6 +205,31 @@ export default function MainChatArea({ currentRoom, currentUser }: MainChatAreaP
 
       {/* Message Input */}
       <div className="p-4 border-t border-[var(--discord-darker)]">
+        {/* Reply Preview */}
+        {replyToMessage && (
+          <div className="mb-2 bg-[var(--discord-dark)] p-3 rounded-lg border-l-4 border-[var(--discord-blurple)]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-sm">
+                <span className="text-[var(--discord-light)]/70">Yanıtlıyor:</span>
+                <span className="font-medium text-[var(--discord-light)]">
+                  {replyToMessage.user.username}
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClearReply}
+                className="text-[var(--discord-light)]/50 hover:text-[var(--discord-light)] p-1"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-[var(--discord-light)]/70 text-sm mt-1 truncate">
+              {replyToMessage.content || "Dosya"}
+            </p>
+          </div>
+        )}
+        
         <div className="bg-[var(--discord-darker)] rounded-xl">
           <form onSubmit={handleSubmit} className="flex items-end p-3 space-x-3">
             <Button

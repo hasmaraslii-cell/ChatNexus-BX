@@ -55,6 +55,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/users/offline", async (req, res) => {
+    try {
+      const users = await storage.getOfflineUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Çevrimdışı kullanıcılar alınamadı" });
+    }
+  });
+
+  app.patch("/api/users/:id/profile", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { username, profileImage } = req.body;
+      
+      if (!username) {
+        return res.status(400).json({ message: "Kullanıcı adı gerekli" });
+      }
+      
+      // Check if username is taken by another user
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser && existingUser.id !== id) {
+        return res.status(400).json({ message: "Bu kullanıcı adı zaten kullanılıyor" });
+      }
+      
+      const user = await storage.updateUserProfile(id, username, profileImage);
+      if (!user) {
+        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Profil güncellenemedi" });
+    }
+  });
+
+  app.patch("/api/users/:id/ban", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { duration } = req.body; // minutes, "permanent", or null to unban
+      
+      let bannedUntil: Date | null = null;
+      if (duration === "permanent") {
+        bannedUntil = new Date("2099-12-31"); // Far future date
+      } else if (duration && typeof duration === "number") {
+        bannedUntil = new Date(Date.now() + duration * 60 * 1000);
+      }
+      
+      const user = await storage.banUser(id, bannedUntil);
+      if (!user) {
+        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Kullanıcı banlanamadı" });
+    }
+  });
+
   app.patch("/api/users/:id/status", async (req, res) => {
     try {
       const { id } = req.params;
@@ -211,6 +269,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Serve uploaded files
   app.use('/uploads', express.static('uploads'));
+
+  // Message editing and deletion
+  app.patch("/api/messages/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { content, userId } = req.body;
+      
+      if (!content) {
+        return res.status(400).json({ message: "Mesaj içeriği gerekli" });
+      }
+      
+      const message = await storage.getMessage(id);
+      if (!message) {
+        return res.status(404).json({ message: "Mesaj bulunamadı" });
+      }
+      
+      // Check if user is the message author or admin
+      const user = await storage.getUser(userId);
+      if (!user || (message.userId !== userId && !user.isAdmin)) {
+        return res.status(403).json({ message: "Bu mesajı düzenleme yetkiniz yok" });
+      }
+      
+      const updatedMessage = await storage.updateMessage(id, content);
+      res.json(updatedMessage);
+    } catch (error) {
+      res.status(500).json({ message: "Mesaj güncellenemedi" });
+    }
+  });
+
+  app.delete("/api/messages/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { userId } = req.body;
+      
+      const message = await storage.getMessage(id);
+      if (!message) {
+        return res.status(404).json({ message: "Mesaj bulunamadı" });
+      }
+      
+      // Check if user is the message author or admin
+      const user = await storage.getUser(userId);
+      if (!user || (message.userId !== userId && !user.isAdmin)) {
+        return res.status(403).json({ message: "Bu mesajı silme yetkiniz yok" });
+      }
+      
+      const success = await storage.deleteMessage(id);
+      if (!success) {
+        return res.status(404).json({ message: "Mesaj silinemedi" });
+      }
+      
+      res.json({ message: "Mesaj silindi" });
+    } catch (error) {
+      res.status(500).json({ message: "Mesaj silinemedi" });
+    }
+  });
 
   // File download route
   app.get("/api/download/:filename", (req, res) => {

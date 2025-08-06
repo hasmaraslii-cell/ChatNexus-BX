@@ -7,9 +7,10 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull(),
   profileImage: text("profile_image"),
-  status: text("status").notNull().default("online"), // online, away, busy
+  status: text("status").notNull().default("online"), // online, away, busy, offline
   isAdmin: boolean("is_admin").default(false),
   lastSeen: timestamp("last_seen").defaultNow(),
+  bannedUntil: timestamp("banned_until"),
 });
 
 export const rooms = pgTable("rooms", {
@@ -29,6 +30,8 @@ export const messages = pgTable("messages", {
   filePath: text("file_path"),
   fileSize: integer("file_size"),
   createdAt: timestamp("created_at").defaultNow(),
+  editedAt: timestamp("edited_at"),
+  replyToId: varchar("reply_to_id"),
 });
 
 // Insert schemas
