@@ -1,7 +1,11 @@
-import { type User, type InsertUser, type Room, type InsertRoom, type Message, type InsertMessage, type MessageWithUser, type RoomWithMessageCount } from "@shared/schema";
+import { type User, type InsertUser, type Room, type InsertRoom, type Message, type InsertMessage, type MessageWithUser, type RoomWithMessageCount, type TypingIndicator } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
+  // Typing indicators
+  setTyping(userId: string, roomId: string, username: string): Promise<void>;
+  clearTyping(userId: string, roomId: string): Promise<void>;
+  getTypingUsers(roomId: string): Promise<TypingIndicator[]>;
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -34,14 +38,19 @@ export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private rooms: Map<string, Room>;
   private messages: Map<string, Message>;
+  private typingIndicators: Map<string, TypingIndicator>;
 
   constructor() {
     this.users = new Map();
     this.rooms = new Map();
     this.messages = new Map();
+    this.typingIndicators = new Map();
     
     // Initialize default rooms
     this.initializeDefaultRooms();
+    
+    // Clean up old typing indicators every 10 seconds
+    setInterval(() => this.cleanupOldTypingIndicators(), 10000);
   }
 
   private async initializeDefaultRooms() {
@@ -136,10 +145,18 @@ export class MemStorage implements IStorage {
 
   async getOfflineUsers(): Promise<User[]> {
     const now = new Date();
-    return Array.from(this.users.values()).filter(user => 
-      (user.status === "offline" || user.status !== "online") && 
-      (!user.bannedUntil || user.bannedUntil < now)
-    );
+    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+    
+    return Array.from(this.users.values()).filter(user => {
+      // A user is considered offline if:
+      // 1. Their status is explicitly "offline", OR
+      // 2. They haven't been seen in the last 5 minutes and aren't explicitly "online"
+      const isExplicitlyOffline = user.status === "offline";
+      const isInactive = user.lastSeen && user.lastSeen < fiveMinutesAgo && user.status !== "online";
+      
+      return (isExplicitlyOffline || isInactive) && 
+        (!user.bannedUntil || user.bannedUntil < now);
+    });
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -283,6 +300,42 @@ export class MemStorage implements IStorage {
     // Delete the room
     this.rooms.delete(id);
     return true;
+  }
+
+  // Typing indicators
+  async setTyping(userId: string, roomId: string, username: string): Promise<void> {
+    const key = `${userId}-${roomId}`;
+    this.typingIndicators.set(key, {
+      userId,
+      username,
+      roomId,
+      timestamp: new Date()
+    });
+  }
+
+  async clearTyping(userId: string, roomId: string): Promise<void> {
+    const key = `${userId}-${roomId}`;
+    this.typingIndicators.delete(key);
+  }
+
+  async getTypingUsers(roomId: string): Promise<TypingIndicator[]> {
+    const now = new Date();
+    const cutoffTime = new Date(now.getTime() - 5000); // 5 seconds ago
+    
+    return Array.from(this.typingIndicators.values()).filter(indicator => 
+      indicator.roomId === roomId && indicator.timestamp > cutoffTime
+    );
+  }
+
+  private cleanupOldTypingIndicators(): void {
+    const now = new Date();
+    const cutoffTime = new Date(now.getTime() - 10000); // 10 seconds ago
+    
+    Array.from(this.typingIndicators.entries()).forEach(([key, indicator]) => {
+      if (indicator.timestamp < cutoffTime) {
+        this.typingIndicators.delete(key);
+      }
+    });
   }
 }
 

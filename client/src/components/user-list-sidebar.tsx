@@ -166,29 +166,7 @@ export default function UserListSidebar({
           )}
         </div>
 
-        {/* Offline Users Section */}
-        {offlineUsers.length > 0 && (
-          <div>
-            <Button
-              variant="ghost"
-              onClick={() => setShowOffline(!showOffline)}
-              className="w-full justify-start p-1 h-auto text-xs text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] mb-2"
-            >
-              {showOffline ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              <span className="ml-2 uppercase font-semibold">
-                Çevrimdışı — {offlineUsers.length}
-              </span>
-            </Button>
-            
-            {showOffline && (
-              <div className="space-y-1">
-                {offlineUsers.map((user) => (
-                  <UserItem key={user.id} user={user} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        {/* Hide offline users section - as requested */}
       </div>
     </div>
   );

@@ -67,3 +67,17 @@ export type MessageWithUser = Message & {
 export type RoomWithMessageCount = Room & {
   messageCount: number;
 };
+
+// Typing indicator types
+export type TypingIndicator = {
+  userId: string;
+  username: string;
+  roomId: string;
+  timestamp: Date;
+};
+
+// DM Room type (extending Room for DM functionality)
+export type DMRoom = Room & {
+  isDM: boolean;
+  participants?: string[]; // User IDs participating in the DM
+};

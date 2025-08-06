@@ -258,63 +258,7 @@ export default function MobileMenu({
                 )}
               </div>
 
-              {/* Offline Users */}
-              {offlineUsers.length > 0 && (
-                <div className="mb-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowOffline(!showOffline)}
-                    className="w-full justify-start p-0 hover:bg-transparent text-[var(--discord-light)]/70 hover:text-[var(--discord-light)]"
-                  >
-                    {showOffline ? (
-                      <ChevronDown className="w-3 h-3 mr-1" />
-                    ) : (
-                      <ChevronRight className="w-3 h-3 mr-1" />
-                    )}
-                    <span className="text-xs uppercase font-semibold">
-                      Çevrimdışı — {offlineUsers.length}
-                    </span>
-                  </Button>
-
-                  {showOffline && (
-                    <div className="mt-2 space-y-1">
-                      {offlineUsers.map((user) => (
-                        <div key={user.id} className="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[var(--discord-dark)]/50 opacity-60">
-                          <div className="relative">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center overflow-hidden ${getUserColor(user.id)}`}>
-                              {user.profileImage ? (
-                                <img 
-                                  src={user.profileImage} 
-                                  alt={user.username}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <UserIcon className="text-white text-xs w-3 h-3" />
-                              )}
-                            </div>
-                            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--discord-darker)] ${getStatusColor(user.status)}`} />
-                          </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-1">
-                              <span className="text-sm text-[var(--discord-light)] truncate">
-                                {user.username}
-                              </span>
-                              {user.isAdmin && (
-                                <Crown className="w-3 h-3 text-[var(--discord-yellow)]" />
-                              )}
-                            </div>
-                            <span className="text-xs text-[var(--discord-light)]/50">
-                              {getStatusText(user.status)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Hide offline users section in mobile as requested */}
             </div>
           </div>
 

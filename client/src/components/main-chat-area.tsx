@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Hash, Paperclip, Search, Bell, Plus, Smile, Send, X, Mic, MicOff, Reply } from "lucide-react";
 import MessageItem from "@/components/message-item";
 import FileUploadArea from "@/components/file-upload-area";
-import type { Room, User, MessageWithUser } from "@shared/schema";
+import type { Room, User, MessageWithUser, TypingIndicator } from "@shared/schema";
 
 interface MainChatAreaProps {
   currentRoom: Room;
@@ -42,6 +42,13 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     queryKey: ["/api/users"],
     enabled: !!currentUser,
     staleTime: 30000, // Cache users for mentions
+  });
+
+  const { data: typingUsers = [] } = useQuery({
+    queryKey: ["/api/rooms", currentRoom.id, "typing"],
+    enabled: !!currentUser && !!currentRoom,
+    refetchInterval: 2000, // Check typing status every 2 seconds
+    staleTime: 1000,
   });
 
   const sendMessageMutation = useMutation({
@@ -104,6 +111,11 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
 
     setMessage("");
     setIsTyping(false);
+    
+    // Clear typing indicator
+    apiRequest("DELETE", `/api/rooms/${currentRoom.id}/typing`, {
+      userId: currentUser.id,
+    }).catch(console.error);
     
     // Clear reply after sending
     if (onClearReply) {
@@ -238,10 +250,20 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
       setShowUserSuggestions(false);
     }
     
+    // Handle typing indicators
     if (value.length > 0 && !isTyping) {
       setIsTyping(true);
+      // Send typing indicator
+      apiRequest("POST", `/api/rooms/${currentRoom.id}/typing`, {
+        userId: currentUser.id,
+        username: currentUser.username,
+      }).catch(console.error);
     } else if (value.length === 0 && isTyping) {
       setIsTyping(false);
+      // Clear typing indicator
+      apiRequest("DELETE", `/api/rooms/${currentRoom.id}/typing`, {
+        userId: currentUser.id,
+      }).catch(console.error);
     }
   };
 
@@ -347,14 +369,23 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
         )}
         
         {/* Typing Indicator */}
-        {isTyping && (
+        {Array.isArray(typingUsers) && typingUsers.length > 0 && (
           <div className="flex items-center space-x-2 text-[var(--discord-light)]/70 text-sm">
             <div className="flex space-x-1">
               <div className="w-2 h-2 bg-[var(--discord-light)]/50 rounded-full animate-bounce"></div>
               <div className="w-2 h-2 bg-[var(--discord-light)]/50 rounded-full animate-bounce-delay-1"></div>
               <div className="w-2 h-2 bg-[var(--discord-light)]/50 rounded-full animate-bounce-delay-2"></div>
             </div>
-            <span>Birisi yazıyor...</span>
+            <span>
+              {typingUsers.length === 1 
+                ? `${typingUsers[0].username} yazıyor...`
+                : typingUsers.length === 2
+                ? `${typingUsers[0].username} ve ${typingUsers[1].username} yazıyor...`
+                : typingUsers.length > 2
+                ? "Pek çok kişi yazıyor..."
+                : "Birisi yazıyor..."
+              }
+            </span>
           </div>
         )}
         

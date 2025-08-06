@@ -352,6 +352,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Bu mesajı silme yetkiniz yok" });
       }
       
+      // If it's a file message, also delete the file
+      if (message.filePath && message.fileName) {
+        const fs = await import('fs');
+        const filePath = message.filePath.replace('/uploads/', 'uploads/');
+        try {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        } catch (fileError) {
+          console.error('Error deleting file:', fileError);
+        }
+      }
+      
       const success = await storage.deleteMessage(id);
       if (!success) {
         return res.status(404).json({ message: "Mesaj silinemedi" });
@@ -371,6 +384,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.download(filePath);
     } catch (error) {
       res.status(404).json({ message: "Dosya bulunamadı" });
+    }
+  });
+
+  // Typing indicators
+  app.post("/api/rooms/:roomId/typing", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { userId, username } = req.body;
+      
+      if (!userId || !username) {
+        return res.status(400).json({ message: "UserId ve username gerekli" });
+      }
+      
+      await storage.setTyping(userId, roomId, username);
+      res.json({ message: "Yazma durumu ayarlandı" });
+    } catch (error) {
+      res.status(500).json({ message: "Yazma durumu ayarlanamadı" });
+    }
+  });
+
+  app.delete("/api/rooms/:roomId/typing", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ message: "UserId gerekli" });
+      }
+      
+      await storage.clearTyping(userId, roomId);
+      res.json({ message: "Yazma durumu temizlendi" });
+    } catch (error) {
+      res.status(500).json({ message: "Yazma durumu temizlenemedi" });
+    }
+  });
+
+  app.get("/api/rooms/:roomId/typing", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const typingUsers = await storage.getTypingUsers(roomId);
+      res.json(typingUsers);
+    } catch (error) {
+      res.status(500).json({ message: "Yazanlar alınamadı" });
     }
   });
 
