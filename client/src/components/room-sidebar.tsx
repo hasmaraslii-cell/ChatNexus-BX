@@ -64,8 +64,19 @@ export default function RoomSidebar({
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => {
+                  const groupName = prompt("Yeni grup adını girin:");
+                  if (groupName && groupName.trim()) {
+                    fetch('/api/rooms', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ name: groupName.trim() })
+                    }).then(() => window.location.reload());
+                  }
+                }}
                 className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
-                title="Yönetici - Yeni Kanal Ekle"
+                title="Yeni Grup Oluştur"
+                data-testid="button-create-group"
               >
                 <Plus className="w-4 h-4" />
               </Button>

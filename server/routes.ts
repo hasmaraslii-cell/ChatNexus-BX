@@ -52,6 +52,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const user = await storage.createUser(userData);
+      
+      // Send a random welcome message to the general room
+      const welcomeMessages = [
+        `Vahşi bir @${userData.username} belirdi!`,
+        `@${userData.username} spawn oldu.`,
+        `@${userData.username} oyuna giriş yaptı.`,
+        `@${userData.username} portaldan içeri düştü.`,
+        `@${userData.username} uzay-zamanı yararak geldi.`,
+        `Partiye yeni bir üye katıldı: @${userData.username}`,
+        `@${userData.username} başarıyla sunucuya yüklendi.`,
+        `@${userData.username}, evrende yeni bir maceraya başladı.`,
+        `Duyuru: @${userData.username} sunucuya iniş yaptı.`,
+        `Sistem mesajı: @${userData.username} artık aramızda.`,
+        `@${userData.username}, boyutlar arası yolculuğunu tamamladı.`,
+        `[GÜNCELLEME]: Yeni karakter eklendi: @${userData.username}`,
+        `@${userData.username} geldi, internet yavaşladı.`,
+        `@${userData.username} geldi, herkes cool davranın.`,
+        `@${userData.username} katıldı, kaos seviyesi +1.`
+      ];
+      
+      const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+      
+      // Find the general room and send welcome message
+      try {
+        const rooms = await storage.getAllRooms();
+        const generalRoom = rooms.find(room => room.name.toLowerCase().includes('genel') || room.name.toLowerCase().includes('general'));
+        
+        if (generalRoom) {
+          const systemMessage = {
+            roomId: generalRoom.id,
+            userId: user.id,
+            content: randomMessage,
+            type: 'system' as const
+          };
+          await storage.createMessage(systemMessage);
+        }
+      } catch (error) {
+        console.error('Welcome message could not be sent:', error);
+      }
+      
       res.json(user);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Kullanıcı oluşturulamadı" });

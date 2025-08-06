@@ -148,7 +148,7 @@ export default function UserListSidebar({
         </h3>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-4">
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-4">
         {/* Online Users Section */}
         <div>
           <Button
@@ -158,13 +158,16 @@ export default function UserListSidebar({
           >
             {showOnline ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
             <span className="ml-2 uppercase font-semibold">
-              Çevrimiçi — {onlineUsers.length}
+              Kullanıcılar — {onlineUsers.length + offlineUsers.length}
             </span>
           </Button>
           
           {showOnline && (
             <div className="space-y-1">
               {onlineUsers.map((user) => (
+                <UserItem key={user.id} user={user} />
+              ))}
+              {offlineUsers.map((user) => (
                 <UserItem key={user.id} user={user} />
               ))}
             </div>

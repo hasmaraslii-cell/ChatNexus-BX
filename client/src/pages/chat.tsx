@@ -215,8 +215,17 @@ export default function Chat() {
             </span>
           </div>
 
-          {/* Right side - empty for balance */}
-          <div className="w-9"></div>
+          {/* Right Menu Button - Users */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowUserSidebar(!showUserSidebar)}
+            className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2"
+            data-testid="button-toggle-users"
+            title="Kullanıcılar"
+          >
+            <Users className="w-5 h-5" />
+          </Button>
         </div>
       )}
 
@@ -248,8 +257,14 @@ export default function Chat() {
         />
       </div>
 
-      {/* User List Sidebar - Desktop Only */}
-      {!isMobile && (
+      {/* User List Sidebar */}
+      <div className={`${
+        isMobile 
+          ? `fixed inset-y-0 right-0 z-40 transform transition-transform duration-300 ${
+              showUserSidebar ? 'translate-x-0' : 'translate-x-full'
+            } ${isMobile ? 'pt-12' : ''}`
+          : ''
+      }`}>
         <UserListSidebar 
           onlineUsers={Array.isArray(onlineUsers) ? onlineUsers : []}
           offlineUsers={Array.isArray(offlineUsers) ? offlineUsers : []}
@@ -258,13 +273,16 @@ export default function Chat() {
           onBanUser={handleBanUser}
           onStartDM={handleStartDM}
         />
-      )}
+      </div>
 
       {/* Mobile Overlay */}
-      {isMobile && showRoomSidebar && (
+      {isMobile && (showRoomSidebar || showUserSidebar) && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={() => setShowRoomSidebar(false)}
+          onClick={() => {
+            setShowRoomSidebar(false);
+            setShowUserSidebar(false);
+          }}
           data-testid="mobile-overlay"
         />
       )}
