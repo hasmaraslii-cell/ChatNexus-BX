@@ -85,7 +85,7 @@ export default function RoomSidebar({
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
+      <div className="flex-1 overflow-y-auto mobile-scroll-area">
         <div className="p-2">
           <h3 className="text-xs uppercase text-[var(--discord-light)]/50 font-semibold mb-2 px-2">
             Odalar

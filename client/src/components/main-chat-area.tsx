@@ -509,26 +509,6 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
               </Button>
 
               <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={isRecording ? stopRecording : startRecording}
-                className={`p-2 shrink-0 transition-colors ${
-                  isRecording 
-                    ? "text-red-500 hover:text-red-400 bg-red-500/20 hover:bg-red-500/30" 
-                    : "text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
-                }`}
-                title={isRecording ? "Kaydı Durdur" : "Sesli Mesaj"}
-                data-testid="button-voice-record"
-              >
-                {isRecording ? (
-                  <MicOff className="w-4 h-4 md:w-5 md:h-5" />
-                ) : (
-                  <Mic className="w-4 h-4 md:w-5 md:h-5" />
-                )}
-              </Button>
-              
-              <Button
                 type="submit"
                 className="bg-[var(--discord-blurple)] hover:bg-[var(--discord-blurple)]/80 text-white p-2 shrink-0"
                 title="Gönder"

@@ -148,3 +148,30 @@
 .scrollbar-track-transparent::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* Mobile menu scrolling improvements */
+.mobile-scroll-area {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--discord-light) transparent;
+  max-height: calc(100vh - 140px);
+}
+
+.mobile-scroll-area::-webkit-scrollbar {
+  width: 4px;
+}
+
+.mobile-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-scroll-area::-webkit-scrollbar-thumb {
+  background: var(--discord-light);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+.mobile-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: var(--discord-blurple);
+  opacity: 1;
+}
