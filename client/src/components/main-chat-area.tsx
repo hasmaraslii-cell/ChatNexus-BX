@@ -34,8 +34,8 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
 
   const { data: messages, refetch: refetchMessages } = useQuery({
     queryKey: ["/api/rooms", currentRoom.id, "messages"],
-    refetchInterval: 3000, // Refetch every 3 seconds for real-time feel
-    staleTime: 1000, // Cache messages for 1 second to reduce requests
+    refetchInterval: window.innerWidth <= 768 ? 5000 : 3000, // Slower on mobile
+    staleTime: window.innerWidth <= 768 ? 2000 : 1000, // Longer cache on mobile
   });
 
   const { data: allUsers } = useQuery({
@@ -47,8 +47,8 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
   const { data: typingUsers = [] } = useQuery({
     queryKey: ["/api/rooms", currentRoom.id, "typing"],
     enabled: !!currentUser && !!currentRoom,
-    refetchInterval: 2000, // Check typing status every 2 seconds
-    staleTime: 1000,
+    refetchInterval: window.innerWidth <= 768 ? 4000 : 2000, // Slower on mobile
+    staleTime: window.innerWidth <= 768 ? 2000 : 1000, // Longer cache on mobile
   });
 
   const sendMessageMutation = useMutation({

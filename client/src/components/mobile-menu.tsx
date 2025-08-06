@@ -214,7 +214,7 @@ export default function MobileMenu({
               
               {showDMs && dmRooms && Array.isArray(dmRooms) && (
                 <div className="space-y-1">
-                  {dmRooms.map((room: Room) => {
+                  {(dmRooms as Room[]).map((room: Room) => {
                     const messageCount = room.messageCount || 0;
                     const isActive = currentRoom.id === room.id;
                     

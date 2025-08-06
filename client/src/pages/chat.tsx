@@ -91,15 +91,15 @@ export default function Chat() {
   const { data: onlineUsers, refetch: refetchUsers } = useQuery({
     queryKey: ["/api/users/online"],
     enabled: !!currentUser,
-    refetchInterval: 15000, // Refetch every 15 seconds for better performance
-    staleTime: 10000, // Cache for 10 seconds
+    refetchInterval: isMobile ? 20000 : 15000, // Slower on mobile for performance
+    staleTime: isMobile ? 15000 : 10000, // Longer cache on mobile
   });
 
   const { data: offlineUsers } = useQuery({
     queryKey: ["/api/users/offline"],
     enabled: !!currentUser,
-    refetchInterval: 60000, // Refetch offline users every minute
-    staleTime: 30000, // Cache for 30 seconds
+    refetchInterval: isMobile ? 120000 : 60000, // Much slower on mobile
+    staleTime: isMobile ? 60000 : 30000, // Longer cache on mobile
   });
 
   // Set default room when rooms are loaded
@@ -192,14 +192,49 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen overflow-hidden relative">
+      {/* Mobile Navigation Bar - Top */}
+      {isMobile && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-[var(--discord-darker)] border-b border-[var(--discord-dark)] flex items-center justify-between px-4 py-2">
+          {/* Left Menu Button - Rooms */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowRoomSidebar(!showRoomSidebar)}
+            className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2"
+            data-testid="button-toggle-rooms"
+            title="Odalar"
+          >
+            <Hash className="w-5 h-5" />
+          </Button>
 
+          {/* Center - Current Room */}
+          <div className="flex items-center space-x-2 flex-1 justify-center">
+            <Hash className="w-4 h-4 text-[var(--discord-light)]/70" />
+            <span className="text-[var(--discord-light)] font-medium truncate">
+              {currentRoom.name}
+            </span>
+          </div>
+
+          {/* Right Menu Button - Users */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowUserSidebar(!showUserSidebar)}
+            className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2"
+            data-testid="button-toggle-users"
+            title="Kullanıcılar"
+          >
+            <Users className="w-5 h-5" />
+          </Button>
+        </div>
+      )}
 
       {/* Room Sidebar */}
       <div className={`${
         isMobile 
           ? `fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 ${
               showRoomSidebar ? 'translate-x-0' : '-translate-x-full'
-            }`
+            } ${isMobile ? 'pt-12' : ''}`
           : ''
       }`}>
         <RoomSidebar
@@ -212,7 +247,7 @@ export default function Chat() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`flex-1 flex flex-col overflow-hidden ${isMobile ? 'pt-12' : ''}`}>
         <MainChatArea
           currentRoom={currentRoom}
           currentUser={currentUser}
@@ -227,7 +262,7 @@ export default function Chat() {
         isMobile 
           ? `fixed inset-y-0 right-0 z-40 transform transition-transform duration-300 ${
               showUserSidebar ? 'translate-x-0' : 'translate-x-full'
-            }`
+            } ${isMobile ? 'pt-12' : ''}`
           : ''
       }`}>
         <UserListSidebar 
@@ -248,6 +283,7 @@ export default function Chat() {
             setShowRoomSidebar(false);
             setShowUserSidebar(false);
           }}
+          data-testid="mobile-overlay"
         />
       )}
 
