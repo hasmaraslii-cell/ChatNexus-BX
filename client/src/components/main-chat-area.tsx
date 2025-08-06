@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Hash, Paperclip, Search, Bell, Plus, Smile, Send, X } from "lucide-react";
+import { Hash, Paperclip, Search, Bell, Plus, Smile, Send, X, Mic, MicOff } from "lucide-react";
 import MessageItem from "@/components/message-item";
 import FileUploadArea from "@/components/file-upload-area";
 import type { Room, User, MessageWithUser } from "@shared/schema";
@@ -21,6 +21,12 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
   const [message, setMessage] = useState("");
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [showUserSuggestions, setShowUserSuggestions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [suggestionUsers, setSuggestionUsers] = useState<User[]>([]);
+  const [cursorPosition, setCursorPosition] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const queryClient = useQueryClient();
@@ -28,8 +34,14 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
 
   const { data: messages, refetch: refetchMessages } = useQuery({
     queryKey: ["/api/rooms", currentRoom.id, "messages"],
-    refetchInterval: 5000, // Refetch every 5 seconds for better performance
-    staleTime: 2000, // Cache messages for 2 seconds to reduce requests
+    refetchInterval: 3000, // Refetch every 3 seconds for real-time feel
+    staleTime: 1000, // Cache messages for 1 second to reduce requests
+  });
+
+  const { data: allUsers } = useQuery({
+    queryKey: ["/api/users"],
+    enabled: !!currentUser,
+    staleTime: 30000, // Cache users for mentions
   });
 
   const sendMessageMutation = useMutation({
@@ -122,14 +134,134 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     setShowFileUpload(false);
   };
 
+  // Voice recording functionality
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+
+      recorder.addEventListener("dataavailable", (event) => {
+        chunks.push(event.data);
+      });
+
+      recorder.addEventListener("stop", () => {
+        const audioBlob = new Blob(chunks, { type: "audio/webm" });
+        const formData = new FormData();
+        formData.append("file", audioBlob, "voice-message.webm");
+        
+        // Upload voice message
+        fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+        .then(response => response.json())
+        .then(fileInfo => {
+          sendMessageMutation.mutate({
+            roomId: currentRoom.id,
+            userId: currentUser.id,
+            messageType: "voice",
+            fileName: "Sesli Mesaj",
+            filePath: fileInfo.path,
+            fileSize: fileInfo.size,
+          });
+        })
+        .catch(error => {
+          toast({
+            title: "Hata",
+            description: "Sesli mesaj gönderilemedi",
+            variant: "destructive",
+          });
+        });
+
+        stream.getTracks().forEach(track => track.stop());
+      });
+
+      setMediaRecorder(recorder);
+      recorder.start();
+      setIsRecording(true);
+
+      toast({
+        title: "Kayıt başladı",
+        description: "Sesli mesajınızı kaydediyoruz",
+      });
+    } catch (error) {
+      toast({
+        title: "Hata",
+        description: "Mikrofon erişimi reddedildi",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setMediaRecorder(null);
+      toast({
+        title: "Kayıt tamamlandı",
+        description: "Sesli mesajınız gönderiliyor",
+      });
+    }
+  };
+
+  // @mention functionality
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
+    const value = e.target.value;
+    const position = e.target.selectionStart;
     
-    if (e.target.value.length > 0 && !isTyping) {
+    setMessage(value);
+    setCursorPosition(position);
+    
+    // Check for @mention
+    const lastAtSymbol = value.lastIndexOf('@', position - 1);
+    if (lastAtSymbol !== -1) {
+      const query = value.substring(lastAtSymbol + 1, position);
+      const spaceAfterAt = value.indexOf(' ', lastAtSymbol);
+      
+      if (spaceAfterAt === -1 || spaceAfterAt >= position) {
+        setMentionQuery(query);
+        setShowUserSuggestions(true);
+        
+        // Filter users based on query
+        if (allUsers && Array.isArray(allUsers)) {
+          const filteredUsers = allUsers.filter((user: User) =>
+            user.username.toLowerCase().includes(query.toLowerCase())
+          ).slice(0, 5);
+          setSuggestionUsers(filteredUsers);
+        }
+      } else {
+        setShowUserSuggestions(false);
+      }
+    } else {
+      setShowUserSuggestions(false);
+    }
+    
+    if (value.length > 0 && !isTyping) {
       setIsTyping(true);
-    } else if (e.target.value.length === 0 && isTyping) {
+    } else if (value.length === 0 && isTyping) {
       setIsTyping(false);
     }
+  };
+
+  const selectUser = (user: User) => {
+    const lastAtSymbol = message.lastIndexOf('@', cursorPosition - 1);
+    const beforeMention = message.substring(0, lastAtSymbol);
+    const afterCursor = message.substring(cursorPosition);
+    const newMessage = beforeMention + `@${user.username} ` + afterCursor;
+    
+    setMessage(newMessage);
+    setShowUserSuggestions(false);
+    
+    // Focus and position cursor
+    setTimeout(() => {
+      if (textareaRef.current) {
+        const newPosition = lastAtSymbol + user.username.length + 2;
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newPosition, newPosition);
+      }
+    }, 0);
   };
 
   return (
@@ -177,8 +309,8 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {Array.isArray(messages) && messages.map((msg: MessageWithUser) => (
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ scrollBehavior: 'smooth' }}>
+        {Array.isArray(messages) && messages.length > 0 && messages.map((msg: MessageWithUser) => (
           <MessageItem 
             key={msg.id} 
             message={msg} 
@@ -243,26 +375,52 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
           </div>
         )}
         
-        <div className="bg-[var(--discord-darker)] rounded-xl">
-          <form onSubmit={handleSubmit} className="flex items-end p-3 space-x-3">
+        <div className="bg-[var(--discord-darker)] rounded-xl relative">
+          {/* User Suggestions */}
+          {showUserSuggestions && suggestionUsers.length > 0 && (
+            <div className="absolute bottom-full left-0 right-0 mb-2 bg-[var(--discord-dark)] border border-[var(--discord-darker)] rounded-lg shadow-lg overflow-hidden max-h-48 overflow-y-auto z-10">
+              {suggestionUsers.map((user) => (
+                <button
+                  key={user.id}
+                  type="button"
+                  onClick={() => selectUser(user)}
+                  className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-[var(--discord-darker)] transition-colors text-left"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                    {user.profileImage ? (
+                      <img src={user.profileImage} alt={user.username} className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <span className="text-white font-bold text-sm">{user.username.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[var(--discord-light)] font-medium">{user.username}</div>
+                    <div className="text-[var(--discord-light)]/50 text-sm">@{user.username}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="flex items-end p-3 space-x-2">
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2"
+              className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0"
               title="Dosya Ekle"
               onClick={() => setShowFileUpload(!showFileUpload)}
             >
               <Plus className="w-5 h-5" />
             </Button>
             
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <Textarea
                 ref={textareaRef}
                 value={message}
                 onChange={handleMessageChange}
                 onKeyDown={handleKeyDown}
-                className="w-full bg-transparent text-[var(--discord-light)] placeholder:text-[var(--discord-light)]/50 resize-none border-none focus:ring-0 focus:outline-none min-h-0 p-0"
+                className="w-full bg-transparent text-[var(--discord-light)] placeholder:text-[var(--discord-light)]/50 resize-none border-none focus:ring-0 focus:outline-none min-h-0 p-0 text-sm md:text-base"
                 placeholder={replyToMessage ? `${replyToMessage.user.username} kullanıcısına yanıt ver...` : `#${currentRoom.name} kanalına mesaj gönder`}
                 rows={1}
                 disabled={sendMessageMutation.isPending}
@@ -273,19 +431,38 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
               type="button"
               variant="ghost"
               size="sm"
-              className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2"
+              className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0"
               title="Emoji"
             >
-              <Smile className="w-5 h-5" />
+              <Smile className="w-4 h-4 md:w-5 md:h-5" />
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={isRecording ? stopRecording : startRecording}
+              className={`p-2 shrink-0 transition-colors ${
+                isRecording 
+                  ? "text-red-500 hover:text-red-400 bg-red-500/20 hover:bg-red-500/30" 
+                  : "text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
+              }`}
+              title={isRecording ? "Kaydı Durdur" : "Sesli Mesaj"}
+            >
+              {isRecording ? (
+                <MicOff className="w-4 h-4 md:w-5 md:h-5" />
+              ) : (
+                <Mic className="w-4 h-4 md:w-5 md:h-5" />
+              )}
             </Button>
             
             <Button
               type="submit"
-              className="bg-[var(--discord-blurple)] hover:bg-[var(--discord-blurple)]/80 text-white p-2"
+              className="bg-[var(--discord-blurple)] hover:bg-[var(--discord-blurple)]/80 text-white p-2 shrink-0"
               title="Gönder"
               disabled={!message.trim() || sendMessageMutation.isPending}
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4 md:w-5 md:h-5" />
             </Button>
           </form>
         </div>

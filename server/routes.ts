@@ -46,6 +46,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/users", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Kullanıcılar alınamadı" });
+    }
+  });
+
   app.get("/api/users/online", async (req, res) => {
     try {
       const users = await storage.getOnlineUsers();

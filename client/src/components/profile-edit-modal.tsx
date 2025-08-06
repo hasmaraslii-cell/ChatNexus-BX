@@ -33,13 +33,23 @@ export default function ProfileEditModal({ user, isOpen, onClose }: ProfileEditM
       if (!response.ok) throw new Error("Profil güncellenemedi");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedUser) => {
+      // Update localStorage with the new user data
+      localStorage.setItem("ibx-user", JSON.stringify(updatedUser));
+      
       toast({
         title: "Başarılı",
         description: "Profil başarıyla güncellendi",
       });
+      
+      // Invalidate all user-related queries to sync everywhere
       queryClient.invalidateQueries({ queryKey: ["/api/users/online"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users/offline"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      
+      // Force refresh of messages to show updated profile in all messages
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+      
       onClose();
     },
     onError: (error: any) => {

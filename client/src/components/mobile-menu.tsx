@@ -143,7 +143,7 @@ export default function MobileMenu({
       
       <SheetContent 
         side="left" 
-        className="w-80 p-0 bg-[var(--discord-darker)] border-[var(--discord-dark)] overflow-hidden"
+        className="w-full max-w-xs sm:w-80 p-0 bg-[var(--discord-darker)] border-[var(--discord-dark)] overflow-hidden"
       >
         <div className="flex flex-col h-full">
           {/* Server Header */}
@@ -196,7 +196,7 @@ export default function MobileMenu({
                       draggable={!!(isReordering && currentUser.isAdmin)}
                       onDragStart={(e) => handleDragStart(e, room)}
                       onDragEnd={handleDragEnd}
-                      className={`w-full justify-start px-2 py-2 h-auto hover:bg-[var(--discord-dark)] transition-colors group ${
+                      className={`w-full justify-start px-3 py-2.5 h-auto hover:bg-[var(--discord-dark)] transition-colors group text-sm ${
                         isActive ? "bg-[var(--discord-dark)]/50" : ""
                       } ${isReordering ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
                       onClick={() => !isReordering && onRoomChange(room)}

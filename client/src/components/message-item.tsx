@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Copy, Reply, Download, User, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { Copy, Reply, Download, User, Edit, Trash2, MoreHorizontal, Mic } from "lucide-react";
 import type { MessageWithUser, User as UserType } from "@shared/schema";
 
 interface MessageItemProps {
@@ -148,9 +148,15 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
   };
 
   const renderContentWithLinks = (content: string) => {
-    // Simple URL regex
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const parts = content.split(urlRegex);
+    // Enhanced URL regex for better link detection
+    const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/g;
+    const mentionRegex = /@(\w+)/g;
+    
+    // First, replace mentions with styled mentions
+    let processedContent = content.replace(mentionRegex, '<span class="mention">@$1</span>');
+    
+    // Then handle URLs
+    const parts = processedContent.split(urlRegex);
     
     return parts.map((part, index) => {
       if (urlRegex.test(part)) {
@@ -160,12 +166,29 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
             href={part}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[var(--discord-blurple)] hover:underline"
+            className="text-[var(--discord-blurple)] hover:underline break-all"
+            onClick={(e) => e.stopPropagation()}
           >
             {part}
           </a>
         );
       }
+      
+      // Handle mentions within the part
+      if (part.includes('<span class="mention">')) {
+        return (
+          <span
+            key={index}
+            dangerouslySetInnerHTML={{
+              __html: part.replace(
+                /<span class="mention">(@\w+)<\/span>/g,
+                '<span class="bg-[var(--discord-blurple)]/20 text-[var(--discord-blurple)] px-1 py-0.5 rounded text-sm font-medium">$1</span>'
+              )
+            }}
+          />
+        );
+      }
+      
       return part;
     });
   };
@@ -379,6 +402,31 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
           </div>
         )}
         
+        {/* Voice Message */}
+        {message.messageType === "voice" && message.filePath && (
+          <div className="bg-[var(--discord-darker)] border border-[var(--discord-light)]/20 rounded-lg p-3 max-w-sm mb-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-[var(--discord-blurple)] rounded-full flex items-center justify-center">
+                <Mic className="text-white w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <audio 
+                  controls 
+                  className="w-full h-8"
+                  controlsList="nodownload noremoteplayback"
+                >
+                  <source src={message.filePath} type="audio/webm" />
+                  <source src={message.filePath} type="audio/mp3" />
+                  Tarayıcınız ses oynatmayı desteklemiyor.
+                </audio>
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-2 text-xs text-[var(--discord-light)]/70">
+              <span>Sesli Mesaj</span>
+            </div>
+          </div>
+        )}
+
         {/* File Content */}
         {message.messageType === "file" && message.fileName && (
           <div className="bg-[var(--discord-darker)] border border-[var(--discord-light)]/20 rounded-lg p-3 max-w-xs mb-3">
