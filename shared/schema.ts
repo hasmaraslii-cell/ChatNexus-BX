@@ -18,6 +18,8 @@ export const rooms = pgTable("rooms", {
   name: text("name").notNull(),
   description: text("description"),
   messageCount: integer("message_count").default(0),
+  isDM: boolean("is_dm").default(false),
+  participants: text("participants").array(),
 });
 
 export const messages = pgTable("messages", {

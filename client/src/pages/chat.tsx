@@ -23,6 +23,60 @@ export default function Chat() {
   const [showRoomSidebar, setShowRoomSidebar] = useState(false);
   const [showUserSidebar, setShowUserSidebar] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<MessageWithUser | null>(null);
+  
+  const startDMMutation = useMutation({
+    mutationFn: async (targetUser: User) => {
+      if (!currentUser) throw new Error('Kullanıcı girişi gerekli');
+      
+      const response = await fetch('/api/dm/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user1Id: currentUser.id,
+          user2Id: targetUser.id
+        })
+      });
+      if (!response.ok) throw new Error('DM odası oluşturulamadı');
+      return response.json();
+    },
+    onSuccess: (dmRoom: Room) => {
+      setCurrentRoom(dmRoom);
+      toast({
+        title: "Özel mesajlaşma başlatıldı",
+        description: `${dmRoom.name} ile özel sohbet`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Hata",
+        description: error.message || "DM başlatılamadı",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleStartDM = (targetUser: User) => {
+    if (!currentUser) {
+      toast({
+        title: "Hata",
+        description: "Kullanıcı girişi gerekli",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (targetUser.id === currentUser.id) {
+      toast({
+        title: "Hata",
+        description: "Kendinizle DM başlatamazsınız",
+        variant: "destructive",
+      });
+      return;
+    }
+    startDMMutation.mutate(targetUser);
+  };
+  
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -181,6 +235,7 @@ export default function Chat() {
           currentUserId={currentUser?.id}
           onEditProfile={handleEditProfile}
           onBanUser={handleBanUser}
+          onStartDM={handleStartDM}
         />
       </div>
 

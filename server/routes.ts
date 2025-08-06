@@ -430,6 +430,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DM routes
+  app.post("/api/dm/create", async (req, res) => {
+    try {
+      const { user1Id, user2Id } = req.body;
+      
+      if (!user1Id || !user2Id) {
+        return res.status(400).json({ message: "İki kullanıcı ID'si gerekli" });
+      }
+      
+      if (user1Id === user2Id) {
+        return res.status(400).json({ message: "Kendinizle DM başlatamazsınız" });
+      }
+      
+      // Check if DM room already exists
+      let dmRoom = await storage.getDMRoom(user1Id, user2Id);
+      
+      if (!dmRoom) {
+        dmRoom = await storage.createDMRoom(user1Id, user2Id);
+      }
+      
+      res.json(dmRoom);
+    } catch (error) {
+      res.status(500).json({ message: "DM odası oluşturulamadı" });
+    }
+  });
+
+  app.get("/api/dm/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const dmRooms = await storage.getUserDMRooms(userId);
+      res.json(dmRooms);
+    } catch (error) {
+      res.status(500).json({ message: "DM odaları alınamadı" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

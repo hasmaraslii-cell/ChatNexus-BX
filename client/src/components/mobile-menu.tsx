@@ -39,6 +39,7 @@ interface MobileMenuProps {
   onLogout: () => void;
   onEditProfile?: (user: User) => void;
   onBanUser?: (user: User) => void;
+  onStartDM?: (user: User) => void;
 }
 
 export default function MobileMenu({
@@ -50,7 +51,8 @@ export default function MobileMenu({
   onRoomChange,
   onLogout,
   onEditProfile,
-  onBanUser
+  onBanUser,
+  onStartDM
 }: MobileMenuProps) {
   const [showOnline, setShowOnline] = useState(true);
   const [showOffline, setShowOffline] = useState(false);
@@ -201,9 +203,12 @@ export default function MobileMenu({
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-1">
-                            <span className="text-sm text-[var(--discord-light)] truncate">
+                            <button
+                              onClick={() => onStartDM?.(user)}
+                              className="text-sm text-[var(--discord-light)] truncate hover:text-[var(--discord-blurple)] hover:underline cursor-pointer bg-transparent border-none p-0 text-left"
+                            >
                               {user.username}
-                            </span>
+                            </button>
                             {user.isAdmin && (
                               <Crown className="w-3 h-3 text-[var(--discord-yellow)]" />
                             )}

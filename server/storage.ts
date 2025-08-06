@@ -32,6 +32,11 @@ export interface IStorage {
   deleteMessage(id: string): Promise<boolean>;
   getMessagesByRoom(roomId: string, limit?: number): Promise<MessageWithUser[]>;
   getAllMessages(): Promise<MessageWithUser[]>;
+  
+  // DM functionality
+  createDMRoom(user1Id: string, user2Id: string): Promise<Room>;
+  getDMRoom(user1Id: string, user2Id: string): Promise<Room | null>;
+  getUserDMRooms(userId: string): Promise<Room[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -68,6 +73,8 @@ export class MemStorage implements IStorage {
         name: roomData.name,
         description: roomData.description,
         messageCount: 0,
+        isDM: false,
+        participants: null,
       };
       this.rooms.set(id, room);
     }
@@ -178,7 +185,9 @@ export class MemStorage implements IStorage {
       id, 
       name: insertRoom.name,
       description: insertRoom.description || null,
-      messageCount: 0 
+      messageCount: 0,
+      isDM: false,
+      participants: null
     };
     this.rooms.set(id, room);
     return room;
@@ -336,6 +345,50 @@ export class MemStorage implements IStorage {
         this.typingIndicators.delete(key);
       }
     });
+  }
+
+  // DM functionality
+  async createDMRoom(user1Id: string, user2Id: string): Promise<Room> {
+    const id = randomUUID();
+    const user1 = await this.getUser(user1Id);
+    const user2 = await this.getUser(user2Id);
+    
+    if (!user1 || !user2) {
+      throw new Error("Kullanıcılar bulunamadı");
+    }
+
+    const room: Room = {
+      id,
+      name: `${user1.username}, ${user2.username}`,
+      description: `${user1.username} ve ${user2.username} arasında özel mesajlaşma`,
+      messageCount: 0,
+      isDM: true,
+      participants: [user1Id, user2Id]
+    };
+    
+    this.rooms.set(id, room);
+    return room;
+  }
+
+  async getDMRoom(user1Id: string, user2Id: string): Promise<Room | null> {
+    const rooms = Array.from(this.rooms.values());
+    const dmRoom = rooms.find(room => 
+      room.isDM && 
+      room.participants && 
+      room.participants.includes(user1Id) && 
+      room.participants.includes(user2Id)
+    );
+    
+    return dmRoom || null;
+  }
+
+  async getUserDMRooms(userId: string): Promise<Room[]> {
+    const rooms = Array.from(this.rooms.values());
+    return rooms.filter(room => 
+      room.isDM && 
+      room.participants && 
+      room.participants.includes(userId)
+    );
   }
 }
 

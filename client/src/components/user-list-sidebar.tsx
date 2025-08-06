@@ -10,6 +10,7 @@ interface UserListSidebarProps {
   currentUserId?: string;
   onEditProfile?: (user: User) => void;
   onBanUser?: (user: User) => void;
+  onStartDM?: (user: User) => void;
 }
 
 export default function UserListSidebar({ 
@@ -17,7 +18,8 @@ export default function UserListSidebar({
   offlineUsers = [], 
   currentUserId, 
   onEditProfile, 
-  onBanUser 
+  onBanUser,
+  onStartDM
 }: UserListSidebarProps) {
   const [showOnline, setShowOnline] = useState(true);
   const [showOffline, setShowOffline] = useState(true);
@@ -94,9 +96,12 @@ export default function UserListSidebar({
       
       <div className="flex-1 min-w-0">
         <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium text-[var(--discord-light)] truncate">
+          <button
+            onClick={() => onStartDM?.(user)}
+            className="text-sm font-medium text-[var(--discord-light)] truncate hover:text-[var(--discord-blurple)] hover:underline cursor-pointer bg-transparent border-none p-0 text-left"
+          >
             {user.username}
-          </span>
+          </button>
           {user.isAdmin && (
             <Shield className="w-4 h-4 text-yellow-500" />
           )}
