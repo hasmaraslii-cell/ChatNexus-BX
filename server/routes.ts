@@ -208,7 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/rooms/:roomId/messages", async (req, res) => {
     try {
       const { roomId } = req.params;
-      const limit = parseInt(req.query.limit as string) || 50;
+      const limit = parseInt(req.query.limit as string) || 400; // Default to 400 messages
       
       const room = await storage.getRoom(roomId);
       if (!room) {

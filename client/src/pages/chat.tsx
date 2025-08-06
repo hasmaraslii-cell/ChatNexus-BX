@@ -33,6 +33,12 @@ export default function Chat() {
     refetchInterval: 10000, // Refetch every 10 seconds
   });
 
+  const { data: offlineUsers } = useQuery({
+    queryKey: ["/api/users/offline"],
+    enabled: !!currentUser,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
   // Set default room when rooms are loaded
   useEffect(() => {
     if (rooms && Array.isArray(rooms) && rooms.length > 0 && !currentRoom) {
@@ -116,31 +122,35 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen overflow-hidden relative">
-      {/* Mobile Menu Button */}
+      {/* Discord-like Mobile Header */}
       {isMobile && (
-        <div className="absolute top-4 left-4 z-50">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowRoomSidebar(!showRoomSidebar)}
-            className="text-[var(--discord-light)] bg-[var(--discord-darker)]/80 backdrop-blur-sm"
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-        </div>
-      )}
-
-      {/* Mobile User List Button */}
-      {isMobile && (
-        <div className="absolute top-4 right-4 z-50">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowUserSidebar(!showUserSidebar)}
-            className="text-[var(--discord-light)] bg-[var(--discord-darker)]/80 backdrop-blur-sm"
-          >
-            <Users className="w-5 h-5" />
-          </Button>
+        <div className="absolute top-0 left-0 right-0 z-50 bg-[var(--discord-darker)] border-b border-[var(--discord-dark)] px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowRoomSidebar(!showRoomSidebar)}
+              className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            
+            <div className="flex items-center space-x-2">
+              <Hash className="w-4 h-4 text-[var(--discord-light)]/70" />
+              <span className="text-[var(--discord-light)] font-semibold text-sm">
+                {currentRoom.name}
+              </span>
+            </div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowUserSidebar(!showUserSidebar)}
+              className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2"
+            >
+              <Users className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -162,7 +172,7 @@ export default function Chat() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col ${isMobile ? 'pt-16' : ''}`}>
         <MainChatArea
           currentRoom={currentRoom}
           currentUser={currentUser}
@@ -181,7 +191,8 @@ export default function Chat() {
           : ''
       }`}>
         <UserListSidebar 
-          users={Array.isArray(onlineUsers) ? onlineUsers : []} 
+          onlineUsers={Array.isArray(onlineUsers) ? onlineUsers : []}
+          offlineUsers={Array.isArray(offlineUsers) ? offlineUsers : []}
           currentUserId={currentUser?.id}
           onEditProfile={handleEditProfile}
           onBanUser={handleBanUser}
