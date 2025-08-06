@@ -287,52 +287,55 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[var(--discord-dark)] relative">
+    <div className="flex flex-col h-full bg-[var(--discord-dark)] relative">
       {/* Fixed Chat Header */}
-      <div className="sticky top-0 z-40 h-16 border-b border-[var(--discord-darker)] flex items-center justify-between px-6 bg-[var(--discord-dark)] shadow-lg backdrop-blur-sm flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          <Hash className="text-[var(--discord-light)]/50 w-5 h-5" />
-          <h3 className="font-semibold text-[var(--discord-light)]">
+      <div className="flex-shrink-0 h-16 border-b border-[var(--discord-darker)] flex items-center justify-between px-4 md:px-6 bg-[var(--discord-dark)] shadow-sm">
+        <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
+          <Hash className="text-[var(--discord-light)]/50 w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+          <h3 className="font-semibold text-[var(--discord-light)] truncate text-sm md:text-base">
             {currentRoom.name}
           </h3>
-          <span className="text-[var(--discord-light)]/50 text-sm">|</span>
-          <span className="text-[var(--discord-light)]/70 text-sm">
+          <span className="text-[var(--discord-light)]/50 text-xs md:text-sm hidden md:inline">|</span>
+          <span className="text-[var(--discord-light)]/70 text-xs md:text-sm truncate hidden md:inline">
             {currentRoom.description}
           </span>
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
-            className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-darker)]"
+            className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-darker)] p-2"
             title="Dosya Paylaş"
             onClick={() => setShowFileUpload(!showFileUpload)}
+            data-testid="button-file-upload"
           >
             <Paperclip className="w-4 h-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-darker)]"
+            className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-darker)] p-2 hidden md:flex"
             title="Arama"
+            data-testid="button-search"
           >
             <Search className="w-4 h-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-darker)]"
+            className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-darker)] p-2 hidden md:flex"
             title="Bildirimler"
+            data-testid="button-notifications"
           >
             <Bell className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      {/* Messages Area - Properly sized and scrollable */}
+      {/* Messages Area - Fixed height with proper scrolling */}
       <div 
-        className="flex-1 overflow-y-scroll p-4 space-y-4 scroll-smooth min-h-0 overscroll-behavior-y-contain" 
+        className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-4 scroll-smooth"
         id="messages-container"
         style={{ 
           WebkitOverflowScrolling: 'touch',
@@ -392,10 +395,11 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
-      <div className="p-4 border-t border-[var(--discord-darker)]">
-        {/* Reply Preview */}
-        {replyToMessage && (
+      {/* Fixed Message Input Area */}
+      <div className="flex-shrink-0 border-t border-[var(--discord-darker)] bg-[var(--discord-dark)]">
+        <div className="p-3 md:p-4">
+          {/* Reply Preview */}
+          {replyToMessage && (
           <div className="mb-3 bg-gradient-to-r from-[var(--discord-blurple)]/10 to-[var(--discord-dark)] border border-[var(--discord-blurple)]/30 rounded-lg overflow-hidden shadow-md">
             <div className="flex items-start space-x-3 p-4">
               <div className="w-1 h-full bg-[var(--discord-blurple)] rounded-full self-stretch"></div>
@@ -437,104 +441,110 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
               </Button>
             </div>
           </div>
-        )}
-        
-        <div className="bg-[var(--discord-darker)] rounded-xl relative">
-          {/* User Suggestions */}
-          {showUserSuggestions && suggestionUsers.length > 0 && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-[var(--discord-dark)] border border-[var(--discord-darker)] rounded-lg shadow-lg overflow-hidden max-h-48 overflow-y-auto z-10">
-              {suggestionUsers.map((user) => (
-                <button
-                  key={user.id}
-                  type="button"
-                  onClick={() => selectUser(user)}
-                  className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-[var(--discord-darker)] transition-colors text-left"
-                >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                    {user.profileImage ? (
-                      <img src={user.profileImage} alt={user.username} className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <span className="text-white font-bold text-sm">{user.username.charAt(0).toUpperCase()}</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[var(--discord-light)] font-medium">{user.username}</div>
-                    <div className="text-[var(--discord-light)]/50 text-sm">@{user.username}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
           )}
+          
+          <div className="bg-[var(--discord-darker)] rounded-xl relative">
+            {/* User Suggestions */}
+            {showUserSuggestions && suggestionUsers.length > 0 && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-[var(--discord-dark)] border border-[var(--discord-darker)] rounded-lg shadow-lg overflow-hidden max-h-48 overflow-y-auto z-10">
+                {suggestionUsers.map((user) => (
+                  <button
+                    key={user.id}
+                    type="button"
+                    onClick={() => selectUser(user)}
+                    className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-[var(--discord-darker)] transition-colors text-left"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                      {user.profileImage ? (
+                        <img src={user.profileImage} alt={user.username} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        <span className="text-white font-bold text-sm">{user.username.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[var(--discord-light)] font-medium">{user.username}</div>
+                      <div className="text-[var(--discord-light)]/50 text-sm">@{user.username}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit} className="flex items-end p-3 space-x-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0"
-              title="Dosya Ekle"
-              onClick={() => setShowFileUpload(!showFileUpload)}
-            >
-              <Plus className="w-5 h-5" />
-            </Button>
-            
-            <div className="flex-1 min-w-0">
-              <Textarea
-                ref={textareaRef}
-                value={message}
-                onChange={handleMessageChange}
-                onKeyDown={handleKeyDown}
-                className="w-full bg-transparent text-[var(--discord-light)] placeholder:text-[var(--discord-light)]/50 resize-none border-none focus:ring-0 focus:outline-none min-h-0 p-0 text-sm md:text-base"
-                placeholder={replyToMessage ? `${replyToMessage.user.username} kullanıcısına yanıt ver...` : `#${currentRoom.name} kanalına mesaj gönder`}
-                rows={1}
-                disabled={sendMessageMutation.isPending}
-              />
-            </div>
-            
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0"
-              title="Emoji"
-            >
-              <Smile className="w-4 h-4 md:w-5 md:h-5" />
-            </Button>
+            <form onSubmit={handleSubmit} className="flex items-end p-3 space-x-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0"
+                title="Dosya Ekle"
+                onClick={() => setShowFileUpload(!showFileUpload)}
+                data-testid="button-add-file"
+              >
+                <Plus className="w-5 h-5" />
+              </Button>
+              
+              <div className="flex-1 min-w-0">
+                <Textarea
+                  ref={textareaRef}
+                  value={message}
+                  onChange={handleMessageChange}
+                  onKeyDown={handleKeyDown}
+                  className="w-full bg-transparent text-[var(--discord-light)] placeholder:text-[var(--discord-light)]/50 resize-none border-none focus:ring-0 focus:outline-none min-h-0 p-0 text-sm md:text-base"
+                  placeholder={replyToMessage ? `${replyToMessage.user.username} kullanıcısına yanıt ver...` : `#${currentRoom.name} kanalına mesaj gönder`}
+                  rows={1}
+                  disabled={sendMessageMutation.isPending}
+                  data-testid="textarea-message-input"
+                />
+              </div>
+              
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0"
+                title="Emoji"
+                data-testid="button-emoji"
+              >
+                <Smile className="w-4 h-4 md:w-5 md:h-5" />
+              </Button>
 
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={isRecording ? stopRecording : startRecording}
-              className={`p-2 shrink-0 transition-colors ${
-                isRecording 
-                  ? "text-red-500 hover:text-red-400 bg-red-500/20 hover:bg-red-500/30" 
-                  : "text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
-              }`}
-              title={isRecording ? "Kaydı Durdur" : "Sesli Mesaj"}
-            >
-              {isRecording ? (
-                <MicOff className="w-4 h-4 md:w-5 md:h-5" />
-              ) : (
-                <Mic className="w-4 h-4 md:w-5 md:h-5" />
-              )}
-            </Button>
-            
-            <Button
-              type="submit"
-              className="bg-[var(--discord-blurple)] hover:bg-[var(--discord-blurple)]/80 text-white p-2 shrink-0"
-              title="Gönder"
-              disabled={!message.trim() || sendMessageMutation.isPending}
-            >
-              <Send className="w-4 h-4 md:w-5 md:h-5" />
-            </Button>
-          </form>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={isRecording ? stopRecording : startRecording}
+                className={`p-2 shrink-0 transition-colors ${
+                  isRecording 
+                    ? "text-red-500 hover:text-red-400 bg-red-500/20 hover:bg-red-500/30" 
+                    : "text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
+                }`}
+                title={isRecording ? "Kaydı Durdur" : "Sesli Mesaj"}
+                data-testid="button-voice-record"
+              >
+                {isRecording ? (
+                  <MicOff className="w-4 h-4 md:w-5 md:h-5" />
+                ) : (
+                  <Mic className="w-4 h-4 md:w-5 md:h-5" />
+                )}
+              </Button>
+              
+              <Button
+                type="submit"
+                className="bg-[var(--discord-blurple)] hover:bg-[var(--discord-blurple)]/80 text-white p-2 shrink-0"
+                title="Gönder"
+                disabled={!message.trim() || sendMessageMutation.isPending}
+                data-testid="button-send-message"
+              >
+                <Send className="w-4 h-4 md:w-5 md:h-5" />
+              </Button>
+            </form>
+          </div>
+          
+          {/* File Upload Area */}
+          {showFileUpload && (
+            <FileUploadArea onFileUpload={handleFileUpload} />
+          )}
         </div>
-        
-        {/* File Upload Area */}
-        {showFileUpload && (
-          <FileUploadArea onFileUpload={handleFileUpload} />
-        )}
       </div>
     </div>
   );

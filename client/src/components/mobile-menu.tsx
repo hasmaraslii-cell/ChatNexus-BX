@@ -19,7 +19,8 @@ import {
   Shield,
   GripVertical,
   Edit,
-  MessageCircle
+  MessageCircle,
+  Users
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -29,6 +30,7 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import AdminPanel from "@/components/admin-panel";
+import GroupCreationModal from "@/components/group-creation-modal";
 import type { Room, User } from "@shared/schema";
 
 interface MobileMenuProps {
@@ -59,6 +61,7 @@ export default function MobileMenu({
   const [showOnline, setShowOnline] = useState(true);
   const [showOffline, setShowOffline] = useState(false);
   const [showDMs, setShowDMs] = useState(true);
+  const [showGroupCreation, setShowGroupCreation] = useState(false);
 
   const { data: dmRooms } = useQuery({
     queryKey: ["/api/dm", currentUser.id],
@@ -146,6 +149,18 @@ export default function MobileMenu({
                 <h3 className="text-xs uppercase text-[var(--discord-light)]/50 font-semibold">
                   Odalar
                 </h3>
+                {currentUser.isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowGroupCreation(true)}
+                    className="h-6 w-6 p-0 text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
+                    title="Grup Oluştur"
+                    data-testid="button-create-group"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
               
               {rooms.map((room) => {
@@ -199,7 +214,7 @@ export default function MobileMenu({
               
               {showDMs && dmRooms && Array.isArray(dmRooms) && (
                 <div className="space-y-1">
-                  {(dmRooms as Room[]).map((room: Room) => {
+                  {dmRooms.map((room: Room) => {
                     const messageCount = room.messageCount || 0;
                     const isActive = currentRoom.id === room.id;
                     
@@ -211,6 +226,7 @@ export default function MobileMenu({
                             isActive ? "bg-[var(--discord-dark)]/50 border-l-2 border-[var(--discord-blurple)]" : ""
                           }`}
                           onClick={() => onRoomChange(room)}
+                          data-testid={`dm-room-${room.id}`}
                         >
                           <MessageCircle className="text-[var(--discord-light)]/50 text-sm mr-2 w-4 h-4" />
                           <span className="flex-1 text-left text-[var(--discord-light)]">
@@ -412,6 +428,13 @@ export default function MobileMenu({
           </div>
         </div>
       </SheetContent>
+      
+      {/* Group Creation Modal */}
+      <GroupCreationModal
+        isOpen={showGroupCreation}
+        onClose={() => setShowGroupCreation(false)}
+        currentUser={currentUser}
+      />
     </Sheet>
   );
 }
