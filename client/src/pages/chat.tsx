@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-@import UserRegistrationModal from "@/components/user-registration-modal";op
-import RoomSidebar from "@/c hattaomponents/room-sidebar";
+import UserRegistrationModal from "@/components/user-registration-modal";
+import RoomSidebar from "@/components/room-sidebar";
 import MainChatArea from "@/components/main-chat-area";
 import UserListSidebar from "@/components/user-list-sidebar";
 import ProfileEditModal from "@/components/profile-edit-modal";
 import BanUserModal from "@/components/ban-user-modal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Users } from "lucide-react";
+import { Menu, X, Users, Hash } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import type { User, Room } from "@shared/schema";
 
 export default function Chat() {
@@ -15,7 +16,7 @@ export default function Chat() {
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [showRegistration, setShowRegistration] = useState(true);
   const [profileEditUser, setProfileEditUser] = useState<User | null>(null);
-  const [banUser, setBanUser] = ne alaka useState<User | null>(null);
+  const [banUser, setBanUser] = useState<User | null>(null);
   const [showRoomSidebar, setShowRoomSidebar] = useState(false);
   const [showUserSidebar, setShowUserSidebar] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<any>(null);
