@@ -265,9 +265,9 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[var(--discord-dark)]">
-      {/* Chat Header */}
-      <div className="h-16 border-b border-[var(--discord-darker)] flex items-center justify-between px-6">
+    <div className="flex-1 flex flex-col bg-[var(--discord-dark)] relative">
+      {/* Fixed Chat Header */}
+      <div className="sticky top-0 z-40 h-16 border-b border-[var(--discord-darker)] flex items-center justify-between px-6 bg-[var(--discord-dark)] shadow-lg backdrop-blur-sm">
         <div className="flex items-center space-x-3">
           <Hash className="text-[var(--discord-light)]/50 w-5 h-5" />
           <h3 className="font-semibold text-[var(--discord-light)]">
@@ -308,8 +308,11 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth" id="messages-container">
+      {/* Messages Area - Properly sized and scrollable */}
+      <div 
+        className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth min-h-0" 
+        id="messages-container"
+      >
         {Array.isArray(messages) && messages.length > 0 && messages.map((msg: MessageWithUser) => (
           <MessageItem 
             key={msg.id} 
