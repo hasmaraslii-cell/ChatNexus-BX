@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Menu, 
   Hash, 
@@ -17,7 +18,8 @@ import {
   Ban,
   Shield,
   GripVertical,
-  Edit
+  Edit,
+  MessageCircle
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -56,6 +58,21 @@ export default function MobileMenu({
 }: MobileMenuProps) {
   const [showOnline, setShowOnline] = useState(true);
   const [showOffline, setShowOffline] = useState(false);
+  const [showDMs, setShowDMs] = useState(true);
+
+  const { data: dmRooms } = useQuery({
+    queryKey: ["/api/dm", currentUser.id],
+    enabled: !!currentUser,
+    staleTime: 30000,
+  });
+
+  const getDMDisplayName = (room: Room) => {
+    if (!room.participants || room.participants.length < 2) return room.name;
+    
+    // Get the other user's name
+    const otherUserName = room.name.split(', ').find(name => name !== currentUser.username);
+    return otherUserName || "DM";
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -158,6 +175,63 @@ export default function MobileMenu({
                   </div>
                 );
               })}
+            </div>
+
+            <Separator className="bg-[var(--discord-dark)]" />
+
+            {/* DMs Section */}
+            <div className="p-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDMs(!showDMs)}
+                className="w-full justify-start p-0 hover:bg-transparent text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] mb-2"
+              >
+                {showDMs ? (
+                  <ChevronDown className="w-3 h-3 mr-1" />
+                ) : (
+                  <ChevronRight className="w-3 h-3 mr-1" />
+                )}
+                <span className="text-xs uppercase font-semibold">
+                  Özel Mesajlar
+                </span>
+              </Button>
+              
+              {showDMs && dmRooms && Array.isArray(dmRooms) && (
+                <div className="space-y-1">
+                  {(dmRooms as Room[]).map((room: Room) => {
+                    const messageCount = room.messageCount || 0;
+                    const isActive = currentRoom.id === room.id;
+                    
+                    return (
+                      <div key={room.id} className="mb-1">
+                        <Button
+                          variant="ghost"
+                          className={`w-full justify-start px-3 py-2.5 h-auto hover:bg-[var(--discord-dark)] transition-colors group text-sm cursor-pointer ${
+                            isActive ? "bg-[var(--discord-dark)]/50 border-l-2 border-[var(--discord-blurple)]" : ""
+                          }`}
+                          onClick={() => onRoomChange(room)}
+                        >
+                          <MessageCircle className="text-[var(--discord-light)]/50 text-sm mr-2 w-4 h-4" />
+                          <span className="flex-1 text-left text-[var(--discord-light)]">
+                            {getDMDisplayName(room)}
+                          </span>
+                          {messageCount > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              {messageCount}
+                            </Badge>
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                  {(!dmRooms || dmRooms.length === 0) && (
+                    <p className="text-xs text-[var(--discord-light)]/50 px-2 py-1">
+                      Henüz özel mesajınız yok
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <Separator className="bg-[var(--discord-dark)]" />

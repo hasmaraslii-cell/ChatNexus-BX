@@ -46,6 +46,7 @@ export default function Chat() {
         description: `${dmRoom.name} ile özel sohbet`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dm", currentUser.id] });
     },
     onError: (error: any) => {
       toast({

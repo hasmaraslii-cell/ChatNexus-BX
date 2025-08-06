@@ -1,4 +1,5 @@
-import { Hash, Plus, Settings, User, LogOut } from "lucide-react";
+import { useState } from "react";
+import { Hash, Plus, Settings, User, LogOut, MessageCircle, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AdminPanel from "@/components/admin-panel";
+import { useQuery } from "@tanstack/react-query";
 import type { Room, User as UserType } from "@shared/schema";
 
 interface RoomSidebarProps {
@@ -24,8 +26,15 @@ export default function RoomSidebar({
   onRoomChange,
   onLogout
 }: RoomSidebarProps) {
+  const [showDMs, setShowDMs] = useState(true);
+
+  const { data: dmRooms } = useQuery({
+    queryKey: ["/api/dm", currentUser.id],
+    enabled: !!currentUser,
+    staleTime: 30000,
+  });
+
   const getMessageCount = (room: Room) => {
-    // Use real message count from room data
     return room.messageCount || 0;
   };
 
@@ -33,6 +42,15 @@ export default function RoomSidebar({
     if (count === 0) return "hidden";
     if (count < 10) return "bg-red-500 text-white";
     return "bg-[var(--discord-blurple)] text-white";
+  };
+
+  const getDMDisplayName = (room: Room) => {
+    if (!room.participants || room.participants.length < 2) return room.name;
+    
+    // Get the other user's name
+    const otherUserId = room.participants.find(id => id !== currentUser.id);
+    const otherUserName = room.name.split(', ').find(name => name !== currentUser.username);
+    return otherUserName || "DM";
   };
 
   return (
@@ -92,6 +110,65 @@ export default function RoomSidebar({
               </div>
             );
           })}
+        </div>
+
+        {/* DM Section */}
+        <div className="p-2 border-t border-[var(--discord-dark)] mt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDMs(!showDMs)}
+            className="w-full justify-start p-0 hover:bg-transparent text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] mb-2"
+          >
+            {showDMs ? (
+              <ChevronDown className="w-3 h-3 mr-1" />
+            ) : (
+              <ChevronRight className="w-3 h-3 mr-1" />
+            )}
+            <span className="text-xs uppercase font-semibold">
+              Özel Mesajlar
+            </span>
+          </Button>
+          
+          {showDMs && dmRooms && Array.isArray(dmRooms) && (
+            <div className="space-y-1">
+              {(dmRooms as Room[]).map((room: Room) => {
+                const messageCount = getMessageCount(room);
+                const isActive = currentRoom.id === room.id;
+                
+                return (
+                  <div key={room.id} className="mb-1">
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start px-2 py-2 h-auto hover:bg-[var(--discord-dark)]/80 transition-all duration-200 group rounded-md ${
+                        isActive 
+                          ? "bg-[var(--discord-dark)] text-[var(--discord-light)] border-l-2 border-[var(--discord-blurple)]" 
+                          : "text-[var(--discord-light)]/70 hover:text-[var(--discord-light)]"
+                      }`}
+                      onClick={() => onRoomChange(room)}
+                    >
+                      <MessageCircle className={`text-sm mr-2 w-4 h-4 transition-colors ${
+                        isActive ? "text-[var(--discord-light)]" : "text-[var(--discord-light)]/50 group-hover:text-[var(--discord-light)]/70"
+                      }`} />
+                      <span className="flex-1 text-left font-medium">
+                        {getDMDisplayName(room)}
+                      </span>
+                      {messageCount > 0 && (
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold transition-all ${getCountColor(messageCount)}`}>
+                          {messageCount}
+                        </span>
+                      )}
+                    </Button>
+                  </div>
+                );
+              })}
+              {(!dmRooms || dmRooms.length === 0) && (
+                <p className="text-xs text-[var(--discord-light)]/50 px-2 py-1">
+                  Henüz özel mesajınız yok
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
       

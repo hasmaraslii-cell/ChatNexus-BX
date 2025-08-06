@@ -194,10 +194,13 @@ export class MemStorage implements IStorage {
   }
 
   async getAllRooms(): Promise<RoomWithMessageCount[]> {
-    return Array.from(this.rooms.values()).map(room => ({
-      ...room,
-      messageCount: Array.from(this.messages.values()).filter(msg => msg.roomId === room.id).length,
-    }));
+    // Only return non-DM rooms for the regular room list
+    return Array.from(this.rooms.values())
+      .filter(room => !room.isDM)
+      .map(room => ({
+        ...room,
+        messageCount: Array.from(this.messages.values()).filter(msg => msg.roomId === room.id).length,
+      }));
   }
 
   async incrementRoomMessageCount(roomId: string): Promise<void> {
