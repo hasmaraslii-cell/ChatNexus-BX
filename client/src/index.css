@@ -134,3 +134,17 @@
 .status-offline {
   background-color: hsl(214, 9%, 50%);
 }
+
+/* Thin scrollbar utilities */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thumb-discord-dark::-webkit-scrollbar-thumb {
+  background: var(--discord-dark);
+  border-radius: 3px;
+}
+
+.scrollbar-track-transparent::-webkit-scrollbar-track {
+  background: transparent;
+}
