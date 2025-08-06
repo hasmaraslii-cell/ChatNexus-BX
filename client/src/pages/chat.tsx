@@ -1,15 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import UserRegistrationModal from "@/components/user-registration-modal";
 import RoomSidebar from "@/components/room-sidebar";
 import MainChatArea from "@/components/main-chat-area";
 import UserListSidebar from "@/components/user-list-sidebar";
 import ProfileEditModal from "@/components/profile-edit-modal";
 import BanUserModal from "@/components/ban-user-modal";
+import MobileMenu from "@/components/mobile-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Users, Hash } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import type { User, Room } from "@shared/schema";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { User, Room, MessageWithUser } from "@shared/schema";
 
 export default function Chat() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -19,24 +22,29 @@ export default function Chat() {
   const [banUser, setBanUser] = useState<User | null>(null);
   const [showRoomSidebar, setShowRoomSidebar] = useState(false);
   const [showUserSidebar, setShowUserSidebar] = useState(false);
-  const [replyToMessage, setReplyToMessage] = useState<any>(null);
+  const [replyToMessage, setReplyToMessage] = useState<MessageWithUser | null>(null);
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: rooms } = useQuery({
     queryKey: ["/api/rooms"],
     enabled: !!currentUser,
+    staleTime: 30000, // Cache rooms for 30 seconds
   });
 
   const { data: onlineUsers, refetch: refetchUsers } = useQuery({
     queryKey: ["/api/users/online"],
     enabled: !!currentUser,
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 15000, // Refetch every 15 seconds for better performance
+    staleTime: 10000, // Cache for 10 seconds
   });
 
   const { data: offlineUsers } = useQuery({
     queryKey: ["/api/users/offline"],
     enabled: !!currentUser,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 60000, // Refetch offline users every minute
+    staleTime: 30000, // Cache for 30 seconds
   });
 
   // Set default room when rooms are loaded
@@ -101,9 +109,43 @@ export default function Chat() {
     }
   };
 
-  const handleReply = (message: any) => {
+  // Room reordering mutation
+  const reorderRoomsMutation = useMutation({
+    mutationFn: async (reorderedRooms: Room[]) => {
+      const response = await apiRequest("PUT", "/api/rooms/reorder", {
+        rooms: reorderedRooms.map((room, index) => ({ id: room.id, order: index }))
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+      toast({
+        title: "Başarılı",
+        description: "Odalar yeniden sıralandı",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Hata",
+        description: error.message || "Odalar yeniden sıralanamadı",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleReorderRooms = useCallback((reorderedRooms: Room[]) => {
+    if (currentUser?.isAdmin) {
+      reorderRoomsMutation.mutate(reorderedRooms);
+    }
+  }, [currentUser?.isAdmin, reorderRoomsMutation]);
+
+  const handleReply = useCallback((message: MessageWithUser) => {
     setReplyToMessage(message);
-  };
+  }, []);
+
+  const handleClearReply = useCallback(() => {
+    setReplyToMessage(null);
+  }, []);
 
   if (showRegistration) {
     return <UserRegistrationModal onUserCreated={handleUserRegistration} />;
@@ -126,14 +168,18 @@ export default function Chat() {
       {isMobile && (
         <div className="absolute top-0 left-0 right-0 z-50 bg-[var(--discord-darker)] border-b border-[var(--discord-dark)] px-4 py-3">
           <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowRoomSidebar(!showRoomSidebar)}
-              className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2"
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
+            <MobileMenu
+              rooms={Array.isArray(rooms) ? rooms : []}
+              currentRoom={currentRoom}
+              currentUser={currentUser}
+              onlineUsers={Array.isArray(onlineUsers) ? onlineUsers : []}
+              offlineUsers={Array.isArray(offlineUsers) ? offlineUsers : []}
+              onRoomChange={handleRoomChange}
+              onLogout={handleLogout}
+              onEditProfile={handleEditProfile}
+              onBanUser={handleBanUser}
+              onReorderRooms={handleReorderRooms}
+            />
             
             <div className="flex items-center space-x-2">
               <Hash className="w-4 h-4 text-[var(--discord-light)]/70" />
@@ -177,7 +223,7 @@ export default function Chat() {
           currentRoom={currentRoom}
           currentUser={currentUser}
           replyToMessage={replyToMessage}
-          onClearReply={() => setReplyToMessage(null)}
+          onClearReply={handleClearReply}
           onReply={handleReply}
         />
       </div>

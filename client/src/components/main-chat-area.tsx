@@ -28,7 +28,8 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
 
   const { data: messages, refetch: refetchMessages } = useQuery({
     queryKey: ["/api/rooms", currentRoom.id, "messages"],
-    refetchInterval: 3000, // Refetch every 3 seconds for real-time updates
+    refetchInterval: 5000, // Refetch every 5 seconds for better performance
+    staleTime: 2000, // Cache messages for 2 seconds to reduce requests
   });
 
   const sendMessageMutation = useMutation({
@@ -75,15 +76,27 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     
     if (!message.trim()) return;
 
-    sendMessageMutation.mutate({
+    const messageData: any = {
       roomId: currentRoom.id,
       userId: currentUser.id,
       content: message.trim(),
       messageType: "text",
-    });
+    };
+
+    // Add reply reference if replying to a message
+    if (replyToMessage) {
+      messageData.replyToId = replyToMessage.id;
+    }
+
+    sendMessageMutation.mutate(messageData);
 
     setMessage("");
     setIsTyping(false);
+    
+    // Clear reply after sending
+    if (onClearReply) {
+      onClearReply();
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -250,7 +263,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
                 onChange={handleMessageChange}
                 onKeyDown={handleKeyDown}
                 className="w-full bg-transparent text-[var(--discord-light)] placeholder:text-[var(--discord-light)]/50 resize-none border-none focus:ring-0 focus:outline-none min-h-0 p-0"
-                placeholder={`#${currentRoom.name} kanalına mesaj gönder`}
+                placeholder={replyToMessage ? `${replyToMessage.user.username} kullanıcısına yanıt ver...` : `#${currentRoom.name} kanalına mesaj gönder`}
                 rows={1}
                 disabled={sendMessageMutation.isPending}
               />
