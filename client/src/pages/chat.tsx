@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import UserRegistrationModal from "@/components/user-registration-modal";
-import RoomSidebar from "@/components/room-sidebar";
+@import UserRegistrationModal from "@/components/user-registration-modal";op
+import RoomSidebar from "@/c hattaomponents/room-sidebar";
 import MainChatArea from "@/components/main-chat-area";
 import UserListSidebar from "@/components/user-list-sidebar";
 import ProfileEditModal from "@/components/profile-edit-modal";
@@ -16,7 +15,7 @@ export default function Chat() {
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [showRegistration, setShowRegistration] = useState(true);
   const [profileEditUser, setProfileEditUser] = useState<User | null>(null);
-  const [banUser, setBanUser] = useState<User | null>(null);
+  const [banUser, setBanUser] = ne alaka useState<User | null>(null);
   const [showRoomSidebar, setShowRoomSidebar] = useState(false);
   const [showUserSidebar, setShowUserSidebar] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<any>(null);
