@@ -148,26 +148,26 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
   };
 
   const renderContentWithLinks = (content: string) => {
-    // Enhanced URL regex for better link detection
-    const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/g;
+    // Enhanced URL regex for better link detection - includes .com, .org, etc.
+    const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]+|(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.(?:com|org|net|edu|gov|mil|int|co|io|ly|me|app|dev|tech|info|biz|name|pro|tv|cc|us|uk|de|fr|jp|cn|in|au|ca|br|ru|it|es|nl|se|no|dk|fi|pl|cz|sk|hu|hr|rs|bg|ro|gr|tr|il|ae|sa|eg|za|ng|ke|ma|gh|tn|dz|ly|sd|et|ug|rw|tz|mw|zm|zw|bw|na|sz|ls|mz|mg|mu|sc|km|dj|so|er|cf|td|cm|gq|ga|cg|cd|ao|st|gw|gn|sl|lr|ci|gh|bf|ml|ne|sn|gm|gw|cv|mr|eh)\b[^\s<>"{}|\\^`[\]]*)/gi;
     const mentionRegex = /@(\w+)/g;
     
     const elements: React.ReactNode[] = [];
-    let currentIndex = 0;
     
     // Split by URLs first
     const urlSplits = content.split(urlRegex);
     
     urlSplits.forEach((segment, segmentIndex) => {
       if (urlRegex.test(segment)) {
-        // This is a URL
+        // This is a URL - ensure it has protocol
+        const href = segment.startsWith('http') ? segment : `https://${segment}`;
         elements.push(
           <a
             key={`url-${segmentIndex}`}
-            href={segment}
+            href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[var(--discord-blurple)] hover:underline break-all inline-block"
+            className="text-[var(--discord-blurple)] hover:text-[var(--discord-blurple)]/80 hover:underline break-all inline-block font-medium transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             {segment}
@@ -182,7 +182,7 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
             elements.push(
               <span
                 key={`mention-${segmentIndex}-${partIndex}`}
-                className="bg-[var(--discord-blurple)]/20 text-[var(--discord-blurple)] px-1 py-0.5 rounded text-sm font-medium"
+                className="bg-[var(--discord-blurple)]/20 text-[var(--discord-blurple)] px-1.5 py-0.5 rounded-md text-sm font-semibold hover:bg-[var(--discord-blurple)]/30 transition-colors cursor-pointer"
               >
                 @{part}
               </span>
@@ -275,13 +275,13 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
 
   return (
     <div 
-      className="message-group flex items-start space-x-3 p-2 rounded-lg transition-colors group hover:bg-[var(--discord-dark)]/30"
+      className="message-group flex items-start space-x-3 p-2 rounded-lg transition-all duration-200 group hover:bg-[var(--discord-dark)]/40"
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       {/* User Avatar */}
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${getUserColor(message.user.id)}`}>
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden shadow-md ${getUserColor(message.user.id)}`}>
         {message.user.profileImage ? (
           <img 
             src={message.user.profileImage} 
@@ -294,8 +294,36 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
       </div>
       
       <div className="flex-1 min-w-0">
+        {/* Reply Preview */}
+        {message.replyTo && (
+          <div className="mb-3 ml-1 px-3 py-2 bg-gradient-to-r from-[var(--discord-blurple)]/10 to-transparent border-l-2 border-[var(--discord-blurple)] rounded-r-md">
+            <div className="flex items-center space-x-2 mb-2">
+              <Reply className="w-3 h-3 text-[var(--discord-blurple)]" />
+              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                {message.replyTo.user.profileImage ? (
+                  <img src={message.replyTo.user.profileImage} alt="" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  <span className="text-white text-xs font-bold">{message.replyTo.user.username.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <span className="text-xs font-medium text-[var(--discord-blurple)]">
+                {message.replyTo.user.username}
+              </span>
+            </div>
+            <div className="pl-5">
+              <p className="text-sm text-[var(--discord-light)]/80 line-clamp-2">
+                {message.replyTo.content || (
+                  message.replyTo.messageType === "voice" ? "🎤 Sesli mesaj" :
+                  message.replyTo.messageType === "image" ? "🖼️ Resim" :
+                  message.replyTo.messageType === "file" ? "📁 Dosya" : "Medya mesajı"
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-baseline space-x-2 mb-1">
-          <span className="font-semibold text-[var(--discord-light)]">
+          <span className="font-semibold text-[var(--discord-light)] hover:underline cursor-pointer">
             {message.user.username}
           </span>
           <span className="text-xs text-[var(--discord-light)]/50">
@@ -411,31 +439,41 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
           </div>
         )}
         
-        {/* Voice Message */}
+        {/* Voice Message - Discord Style */}
         {message.messageType === "voice" && message.filePath && (
-          <div className="bg-gradient-to-r from-[var(--discord-blurple)]/20 to-[var(--discord-darker)] border border-[var(--discord-blurple)]/30 rounded-lg p-4 max-w-sm mb-3 shadow-lg">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-[var(--discord-blurple)] to-blue-600 rounded-full flex items-center justify-center shadow-md">
-                <Mic className="text-white w-6 h-6" />
-              </div>
-              <div className="flex-1">
-                <div className="mb-2">
-                  <span className="text-sm font-medium text-[var(--discord-light)]">Sesli Mesaj</span>
+          <div className="bg-gradient-to-r from-[#5865f2]/10 to-[#7983f5]/5 border border-[#5865f2]/20 rounded-lg p-4 max-w-sm mb-3 shadow-sm backdrop-blur-sm">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#5865f2] to-[#7983f5] rounded-full flex items-center justify-center shadow-md animate-pulse">
+                  <Mic className="text-white w-5 h-5" />
                 </div>
-                <audio 
-                  controls 
-                  className="w-full h-10 rounded-lg"
-                  controlsList="nodownload noremoteplayback"
-                  style={{
-                    filter: 'hue-rotate(240deg) saturate(1.2)',
-                    backgroundColor: 'var(--discord-dark)'
-                  }}
-                >
-                  <source src={message.filePath} type="audio/webm" />
-                  <source src={message.filePath} type="audio/wav" />
-                  <source src={message.filePath} type="audio/mp3" />
-                  Tarayıcınız ses oynatmayı desteklemiyor.
-                </audio>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[var(--discord-darker)]"></div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-[var(--discord-light)] flex items-center">
+                    <span className="w-2 h-2 bg-[#5865f2] rounded-full mr-2 animate-pulse"></span>
+                    Sesli Mesaj
+                  </span>
+                  <span className="text-xs text-[var(--discord-light)]/50">🎵</span>
+                </div>
+                <div className="bg-[var(--discord-dark)]/50 rounded-lg p-2 border border-[var(--discord-light)]/10">
+                  <audio 
+                    controls 
+                    className="w-full h-8 rounded-md"
+                    controlsList="nodownload noremoteplayback"
+                    style={{
+                      filter: 'hue-rotate(240deg) saturate(1.3) brightness(1.1)',
+                      accentColor: '#5865f2'
+                    }}
+                  >
+                    <source src={message.filePath} type="audio/webm" />
+                    <source src={message.filePath} type="audio/wav" />
+                    <source src={message.filePath} type="audio/mp3" />
+                    <source src={message.filePath} type="audio/ogg" />
+                    Tarayıcınız ses oynatmayı desteklemiyor.
+                  </audio>
+                </div>
               </div>
             </div>
           </div>
@@ -489,38 +527,41 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
               <MoreHorizontal className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="bg-[var(--discord-darker)] border-[var(--discord-dark)]">
+          <DropdownMenuContent className="bg-[var(--discord-darker)] border-[var(--discord-dark)] shadow-xl rounded-lg p-1 min-w-[180px]">
             <DropdownMenuItem
               onClick={handleReply}
-              className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
+              className="text-[var(--discord-light)] hover:bg-[var(--discord-blurple)]/20 hover:text-[var(--discord-blurple)] rounded-md px-3 py-2 cursor-pointer transition-colors flex items-center"
             >
-              <Reply className="w-4 h-4 mr-2" />
-              Yanıtla
+              <Reply className="w-4 h-4 mr-3" />
+              <span className="font-medium">Yanıtla</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleCopyMessage}
-              className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
+              className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)] rounded-md px-3 py-2 cursor-pointer transition-colors flex items-center"
             >
-              <Copy className="w-4 h-4 mr-2" />
-              Kopyala
+              <Copy className="w-4 h-4 mr-3" />
+              <span className="font-medium">Kopyala</span>
             </DropdownMenuItem>
             {message.userId === currentUser?.id && (
               <DropdownMenuItem
                 onClick={handleEdit}
-                className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
+                className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)] rounded-md px-3 py-2 cursor-pointer transition-colors flex items-center"
               >
-                <Edit className="w-4 h-4 mr-2" />
-                Düzenle
+                <Edit className="w-4 h-4 mr-3" />
+                <span className="font-medium">Düzenle</span>
               </DropdownMenuItem>
             )}
             {(message.userId === currentUser?.id || currentUser?.isAdmin) && (
-              <DropdownMenuItem
-                onClick={handleDelete}
-                className="text-red-400 hover:bg-[var(--discord-dark)]"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Sil
-              </DropdownMenuItem>
+              <>
+                <div className="h-px bg-[var(--discord-dark)] my-1 mx-2"></div>
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  className="text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-md px-3 py-2 cursor-pointer transition-colors flex items-center"
+                >
+                  <Trash2 className="w-4 h-4 mr-3" />
+                  <span className="font-medium">Sil</span>
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

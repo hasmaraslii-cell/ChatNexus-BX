@@ -217,7 +217,21 @@ export class MemStorage implements IStorage {
     for (const message of roomMessages) {
       const user = this.users.get(message.userId);
       if (user) {
-        messagesWithUsers.push({ ...message, user });
+        // Check if this message is a reply to another message
+        const replyTo = message.replyToId 
+          ? roomMessages.find(m => m.id === message.replyToId)
+          : undefined;
+        
+        const messageWithUser: MessageWithUser = {
+          ...message,
+          user,
+          replyTo: replyTo && this.users.get(replyTo.userId) ? {
+            ...replyTo,
+            user: this.users.get(replyTo.userId)!
+          } : undefined
+        };
+        
+        messagesWithUsers.push(messageWithUser);
       }
     }
     return messagesWithUsers;

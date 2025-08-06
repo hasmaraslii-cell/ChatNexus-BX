@@ -31,9 +31,8 @@ export default function RoomSidebar({
 
   const getCountColor = (count: number) => {
     if (count === 0) return "hidden";
-    if (count < 5) return "bg-red-500";
-    if (count < 15) return "bg-[var(--discord-yellow)] text-black";
-    return "bg-[var(--discord-blurple)]";
+    if (count < 10) return "bg-red-500 text-white";
+    return "bg-[var(--discord-blurple)] text-white";
   };
 
   return (
@@ -71,17 +70,21 @@ export default function RoomSidebar({
               <div key={room.id} className="mb-1">
                 <Button
                   variant="ghost"
-                  className={`w-full justify-start px-2 py-2 h-auto hover:bg-[var(--discord-dark)] transition-colors group ${
-                    isActive ? "bg-[var(--discord-dark)]/50" : ""
+                  className={`w-full justify-start px-2 py-2 h-auto hover:bg-[var(--discord-dark)]/80 transition-all duration-200 group rounded-md ${
+                    isActive 
+                      ? "bg-[var(--discord-dark)] text-[var(--discord-light)] border-l-2 border-[var(--discord-blurple)]" 
+                      : "text-[var(--discord-light)]/70 hover:text-[var(--discord-light)]"
                   }`}
                   onClick={() => onRoomChange(room)}
                 >
-                  <Hash className="text-[var(--discord-light)]/50 text-sm mr-2 w-4 h-4" />
-                  <span className="flex-1 text-left text-[var(--discord-light)]">
+                  <Hash className={`text-sm mr-2 w-4 h-4 transition-colors ${
+                    isActive ? "text-[var(--discord-light)]" : "text-[var(--discord-light)]/50 group-hover:text-[var(--discord-light)]/70"
+                  }`} />
+                  <span className="flex-1 text-left font-medium">
                     {room.name}
                   </span>
                   {messageCount > 0 && (
-                    <span className={`text-xs px-2 py-1 rounded-full ${getCountColor(messageCount)}`}>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold transition-all ${getCountColor(messageCount)}`}>
                       {messageCount}
                     </span>
                   )}

@@ -61,6 +61,7 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 // Extended types for API responses
 export type MessageWithUser = Message & {
   user: User;
+  replyTo?: MessageWithUser;
 };
 
 export type RoomWithMessageCount = Room & {

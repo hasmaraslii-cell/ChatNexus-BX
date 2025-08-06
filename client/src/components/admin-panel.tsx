@@ -11,7 +11,8 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogTrigger 
+  DialogTrigger,
+  DialogDescription 
 } from "@/components/ui/dialog";
 import { Plus, Trash2, Settings, Crown } from "lucide-react";
 import type { User, Room } from "@shared/schema";
@@ -129,11 +130,14 @@ export default function AdminPanel({ currentUser, rooms }: AdminPanelProps) {
               Yeni Kanal Oluştur
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[var(--discord-darker)] border-[var(--discord-dark)]">
+          <DialogContent className="bg-[var(--discord-darker)] border-[var(--discord-dark)] shadow-2xl">
             <DialogHeader>
-              <DialogTitle className="text-[var(--discord-light)]">
+              <DialogTitle className="text-[var(--discord-light)] text-lg font-semibold">
                 Yeni Kanal Oluştur
               </DialogTitle>
+              <DialogDescription className="text-[var(--discord-light)]/70">
+                Sunucunuz için yeni bir kanal oluşturun.
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateRoom} className="space-y-4">
               <div>
