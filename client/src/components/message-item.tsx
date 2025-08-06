@@ -152,45 +152,54 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
     const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/g;
     const mentionRegex = /@(\w+)/g;
     
-    // First, replace mentions with styled mentions
-    let processedContent = content.replace(mentionRegex, '<span class="mention">@$1</span>');
+    const elements: React.ReactNode[] = [];
+    let currentIndex = 0;
     
-    // Then handle URLs
-    const parts = processedContent.split(urlRegex);
+    // Split by URLs first
+    const urlSplits = content.split(urlRegex);
     
-    return parts.map((part, index) => {
-      if (urlRegex.test(part)) {
-        return (
+    urlSplits.forEach((segment, segmentIndex) => {
+      if (urlRegex.test(segment)) {
+        // This is a URL
+        elements.push(
           <a
-            key={index}
-            href={part}
+            key={`url-${segmentIndex}`}
+            href={segment}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[var(--discord-blurple)] hover:underline break-all"
+            className="text-[var(--discord-blurple)] hover:underline break-all inline-block"
             onClick={(e) => e.stopPropagation()}
           >
-            {part}
+            {segment}
           </a>
         );
+      } else {
+        // Process mentions in non-URL segments
+        const mentionSplits = segment.split(mentionRegex);
+        mentionSplits.forEach((part, partIndex) => {
+          if (partIndex % 2 === 1) {
+            // This is a mention (odd indices after split)
+            elements.push(
+              <span
+                key={`mention-${segmentIndex}-${partIndex}`}
+                className="bg-[var(--discord-blurple)]/20 text-[var(--discord-blurple)] px-1 py-0.5 rounded text-sm font-medium"
+              >
+                @{part}
+              </span>
+            );
+          } else if (part) {
+            // Regular text
+            elements.push(
+              <span key={`text-${segmentIndex}-${partIndex}`}>
+                {part}
+              </span>
+            );
+          }
+        });
       }
-      
-      // Handle mentions within the part
-      if (part.includes('<span class="mention">')) {
-        return (
-          <span
-            key={index}
-            dangerouslySetInnerHTML={{
-              __html: part.replace(
-                /<span class="mention">(@\w+)<\/span>/g,
-                '<span class="bg-[var(--discord-blurple)]/20 text-[var(--discord-blurple)] px-1 py-0.5 rounded text-sm font-medium">$1</span>'
-              )
-            }}
-          />
-        );
-      }
-      
-      return part;
     });
+    
+    return elements;
   };
 
   const canEdit = currentUser && (message.user.id === currentUser.id || currentUser.isAdmin);
@@ -404,25 +413,30 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
         
         {/* Voice Message */}
         {message.messageType === "voice" && message.filePath && (
-          <div className="bg-[var(--discord-darker)] border border-[var(--discord-light)]/20 rounded-lg p-3 max-w-sm mb-3">
+          <div className="bg-gradient-to-r from-[var(--discord-blurple)]/20 to-[var(--discord-darker)] border border-[var(--discord-blurple)]/30 rounded-lg p-4 max-w-sm mb-3 shadow-lg">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-[var(--discord-blurple)] rounded-full flex items-center justify-center">
-                <Mic className="text-white w-5 h-5" />
+              <div className="w-12 h-12 bg-gradient-to-br from-[var(--discord-blurple)] to-blue-600 rounded-full flex items-center justify-center shadow-md">
+                <Mic className="text-white w-6 h-6" />
               </div>
               <div className="flex-1">
+                <div className="mb-2">
+                  <span className="text-sm font-medium text-[var(--discord-light)]">Sesli Mesaj</span>
+                </div>
                 <audio 
                   controls 
-                  className="w-full h-8"
+                  className="w-full h-10 rounded-lg"
                   controlsList="nodownload noremoteplayback"
+                  style={{
+                    filter: 'hue-rotate(240deg) saturate(1.2)',
+                    backgroundColor: 'var(--discord-dark)'
+                  }}
                 >
                   <source src={message.filePath} type="audio/webm" />
+                  <source src={message.filePath} type="audio/wav" />
                   <source src={message.filePath} type="audio/mp3" />
                   Tarayıcınız ses oynatmayı desteklemiyor.
                 </audio>
               </div>
-            </div>
-            <div className="flex items-center justify-between mt-2 text-xs text-[var(--discord-light)]/70">
-              <span>Sesli Mesaj</span>
             </div>
           </div>
         )}
@@ -490,7 +504,7 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
               <Copy className="w-4 h-4 mr-2" />
               Kopyala
             </DropdownMenuItem>
-            {canEdit && (
+            {message.userId === currentUser?.id && (
               <DropdownMenuItem
                 onClick={handleEdit}
                 className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
@@ -499,7 +513,7 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
                 Düzenle
               </DropdownMenuItem>
             )}
-            {canDelete && (
+            {(message.userId === currentUser?.id || currentUser?.isAdmin) && (
               <DropdownMenuItem
                 onClick={handleDelete}
                 className="text-red-400 hover:bg-[var(--discord-dark)]"

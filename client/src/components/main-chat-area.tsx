@@ -4,7 +4,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Hash, Paperclip, Search, Bell, Plus, Smile, Send, X, Mic, MicOff } from "lucide-react";
+import { Hash, Paperclip, Search, Bell, Plus, Smile, Send, X, Mic, MicOff, Reply } from "lucide-react";
 import MessageItem from "@/components/message-item";
 import FileUploadArea from "@/components/file-upload-area";
 import type { Room, User, MessageWithUser } from "@shared/schema";
@@ -309,7 +309,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ scrollBehavior: 'smooth' }}>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth" id="messages-container">
         {Array.isArray(messages) && messages.length > 0 && messages.map((msg: MessageWithUser) => (
           <MessageItem 
             key={msg.id} 
@@ -318,6 +318,11 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
             onReply={onReply}
           />
         ))}
+        {(!messages || !Array.isArray(messages) || messages.length === 0) && (
+          <div className="flex items-center justify-center h-full text-[var(--discord-light)]/50">
+            <p>Henüz mesaj yok. İlk mesajı siz gönderin!</p>
+          </div>
+        )}
         
         {(!messages || !Array.isArray(messages) || messages.length === 0) && (
           <div className="flex items-center justify-center flex-1">
@@ -352,26 +357,46 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
       <div className="p-4 border-t border-[var(--discord-darker)]">
         {/* Reply Preview */}
         {replyToMessage && (
-          <div className="mb-2 bg-[var(--discord-dark)] p-3 rounded-lg border-l-4 border-[var(--discord-blurple)]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-sm">
-                <span className="text-[var(--discord-light)]/70">Yanıtlıyor:</span>
-                <span className="font-medium text-[var(--discord-light)]">
-                  {replyToMessage.user.username}
-                </span>
+          <div className="mb-3 bg-gradient-to-r from-[var(--discord-blurple)]/10 to-[var(--discord-dark)] border border-[var(--discord-blurple)]/30 rounded-lg overflow-hidden shadow-md">
+            <div className="flex items-start space-x-3 p-4">
+              <div className="w-1 h-full bg-[var(--discord-blurple)] rounded-full self-stretch"></div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Reply className="w-4 h-4 text-[var(--discord-blurple)]" />
+                  <span className="text-xs font-medium text-[var(--discord-blurple)]">
+                    {replyToMessage.user.username} kullanıcısına yanıt veriyorsunuz
+                  </span>
+                </div>
+                <div className="bg-[var(--discord-darker)] rounded-md p-3 border-l-2 border-[var(--discord-blurple)]">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      {replyToMessage.user.profileImage ? (
+                        <img src={replyToMessage.user.profileImage} alt="" className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        <span className="text-white text-xs font-bold">{replyToMessage.user.username.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <span className="text-xs font-medium text-[var(--discord-light)]">{replyToMessage.user.username}</span>
+                  </div>
+                  <p className="text-sm text-[var(--discord-light)]/80 line-clamp-2">
+                    {replyToMessage.content || (
+                      replyToMessage.messageType === "voice" ? "🎤 Sesli mesaj" :
+                      replyToMessage.messageType === "image" ? "🖼️ Resim" :
+                      replyToMessage.messageType === "file" ? "📁 Dosya" : "Medya mesajı"
+                    )}
+                  </p>
+                </div>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClearReply}
-                className="text-[var(--discord-light)]/50 hover:text-[var(--discord-light)] p-1"
+                className="text-[var(--discord-light)]/50 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 rounded-full shrink-0"
+                title="Yanıtı İptal Et"
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            <p className="text-[var(--discord-light)]/70 text-sm mt-1 truncate">
-              {replyToMessage.content || "Dosya"}
-            </p>
           </div>
         )}
         

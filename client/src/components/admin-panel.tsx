@@ -178,26 +178,34 @@ export default function AdminPanel({ currentUser, rooms }: AdminPanelProps) {
           </DialogContent>
         </Dialog>
 
-        {/* Room Management */}
-        <div className="space-y-1">
-          <p className="text-xs text-[var(--discord-light)]/50 px-2">Kanal Yönetimi</p>
-          {rooms.map((room) => (
-            <div key={room.id} className="flex items-center justify-between px-2 py-1 rounded hover:bg-[var(--discord-dark)]">
-              <span className="text-xs text-[var(--discord-light)]/70 truncate">
-                #{room.name}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-red-400 hover:text-red-300 hover:bg-red-500/20 p-1"
-                title={`${room.name} kanalını sil`}
-                onClick={() => handleDeleteRoom(room.id, room.name)}
-                disabled={deleteRoomMutation.isPending}
-              >
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </div>
-          ))}
+        {/* Unified Room Management */}
+        <div className="space-y-2">
+          <p className="text-xs text-[var(--discord-light)]/50 px-2 font-medium">Mevcut Kanallar</p>
+          <div className="max-h-32 overflow-y-auto space-y-1">
+            {rooms.map((room) => (
+              <div key={room.id} className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[var(--discord-dark)] transition-colors group">
+                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                  <Settings className="w-3 h-3 text-[var(--discord-light)]/30" />
+                  <span className="text-sm text-[var(--discord-light)]/70 truncate">#{room.name}</span>
+                  {room.messageCount && room.messageCount > 0 && (
+                    <span className="text-xs px-1.5 py-0.5 bg-[var(--discord-blurple)]/20 text-[var(--discord-blurple)] rounded-full">
+                      {room.messageCount}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteRoom(room.id, room.name)}
+                  className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 hover:bg-red-500/20 p-1 transition-all"
+                  title={`${room.name} kanalını sil`}
+                  disabled={deleteRoomMutation.isPending}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

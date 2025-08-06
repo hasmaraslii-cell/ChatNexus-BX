@@ -14,10 +14,22 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    // Allow images, videos, and common document types
-    const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|mov|avi|mkv|pdf|doc|docx|txt|zip|rar/;
+    // Allow images, videos, documents, archives, and audio files
+    const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|mov|avi|mkv|pdf|doc|docx|txt|zip|rar|webm|mp3|wav|ogg|m4a/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    
+    // Allow audio mimetypes for voice messages
+    const audioTypes = /audio\/(webm|mpeg|mp4|wav|ogg|x-wav|x-m4a)/;
+    const videoTypes = /video\/(mp4|webm|quicktime|x-msvideo|x-matroska)/;
+    const imageTypes = /image\/(jpeg|jpg|png|gif|webp)/;
+    const docTypes = /application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|zip|x-rar-compressed)/;
+    const textTypes = /text\/plain/;
+    
+    const mimetype = audioTypes.test(file.mimetype) || 
+                     videoTypes.test(file.mimetype) || 
+                     imageTypes.test(file.mimetype) || 
+                     docTypes.test(file.mimetype) || 
+                     textTypes.test(file.mimetype);
     
     if (mimetype && extname) {
       return cb(null, true);
