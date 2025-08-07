@@ -39,9 +39,8 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
 
   const { data: messages, refetch: refetchMessages } = useQuery({
     queryKey: ["/api/rooms", currentRoom.id, "messages"],
-    refetchInterval: window.innerWidth <= 768 ? 10000 : 8000, // Reduced ping frequency
-    staleTime: window.innerWidth <= 768 ? 8000 : 6000, // Longer cache
-
+    refetchInterval: window.innerWidth <= 768 ? 5000 : 3000,
+    staleTime: 2000,
   });
 
   const { data: allUsers } = useQuery({
@@ -53,8 +52,8 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
   const { data: typingUsers = [] } = useQuery({
     queryKey: ["/api/rooms", currentRoom.id, "typing"],
     enabled: !!currentUser && !!currentRoom,
-    refetchInterval: window.innerWidth <= 768 ? 12000 : 10000, // Reduced ping frequency  
-    staleTime: window.innerWidth <= 768 ? 8000 : 6000, // Longer cache
+    refetchInterval: 2000,
+    staleTime: 1000,
   });
 
   const sendMessageMutation = useMutation({
@@ -176,7 +175,9 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
       if (uploadResult && uploadResult.length > 0) {
         const fileInfo = uploadResult[0];
         // Determine message type based on file type
-        const messageType = file.type.startsWith('image/') ? 'image' : 'file';
+        const messageType = file.type.startsWith('image/') ? 'image' :
+                          file.type.startsWith('video/') ? 'video' :
+                          file.type.startsWith('audio/') ? 'voice' : 'file';
         
         const messageData = {
           roomId: currentRoom.id,
@@ -332,7 +333,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
       clearTimeout(typingTimeoutRef.current);
     }
     
-    // Set new timeout to clear typing indicator
+    // Set new timeout to clear typing indicator  
     typingTimeoutRef.current = setTimeout(() => {
       if (isTyping) {
         setIsTyping(false);
@@ -340,7 +341,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
           userId: currentUser.id,
         }).catch(console.error);
       }
-    }, 2000); // Stop typing indicator after 2 seconds of inactivity
+    }, 1000); // Stop typing indicator after 1 second of inactivity
   };
 
   const selectUser = (user: User) => {

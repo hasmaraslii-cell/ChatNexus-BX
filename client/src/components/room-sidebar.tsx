@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Hash, Plus, Settings, User, LogOut, MessageCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -186,6 +187,7 @@ export default function RoomSidebar({
             </p>
             <p className="text-xs text-[var(--discord-light)]/50">Çevrimiçi</p>
           </div>
+          <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
