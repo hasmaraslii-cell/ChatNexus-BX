@@ -40,16 +40,20 @@ export default function UserListSidebar({
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "online":
-        return "Çevrimiçi";
-      case "away":
-        return "Uzakta";
-      case "busy":
-        return "Meşgul";
-      default:
-        return "Çevrimdışı";
+  const getStatusText = (user: User) => {
+    if (user.status === "online") {
+      return "Çevrimiçi";
+    } else {
+      // Show last seen time for offline users
+      if (user.lastSeen) {
+        const lastSeenDate = new Date(user.lastSeen);
+        const time = lastSeenDate.toLocaleTimeString("tr-TR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        return `Son Görülme: ${time}`;
+      }
+      return "Son Görülme: Bilinmiyor";
     }
   };
 
@@ -107,7 +111,7 @@ export default function UserListSidebar({
           )}
         </div>
         <p className="text-xs text-[var(--discord-light)]/70">
-          {getStatusText(user.status || "offline")}
+          {getStatusText(user)}
         </p>
       </div>
 

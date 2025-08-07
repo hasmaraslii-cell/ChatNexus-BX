@@ -16,6 +16,7 @@ export interface IStorage {
   getOnlineUsers(): Promise<User[]>;
   getOfflineUsers(): Promise<User[]>;
   getAllUsers(): Promise<User[]>;
+  deleteUser(id: string): Promise<boolean>;
 
   // Rooms
   getRoom(id: string): Promise<Room | undefined>;
@@ -172,6 +173,19 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values());
   }
 
+  async deleteUser(id: string): Promise<boolean> {
+    const deleted = this.users.delete(id);
+    if (deleted) {
+      // Also delete all messages from this user
+      for (const [messageId, message] of this.messages.entries()) {
+        if (message.userId === id) {
+          this.messages.delete(messageId);
+        }
+      }
+    }
+    return deleted;
+  }
+
   // Rooms
   async getRoom(id: string): Promise<Room | undefined> {
     return this.rooms.get(id);
@@ -232,6 +246,11 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       editedAt: null,
       replyToId: insertMessage.replyToId || null,
+      pollQuestion: insertMessage.pollQuestion || null,
+      pollOptions: insertMessage.pollOptions || null,
+      pollVotes: insertMessage.pollVotes || null,
+      fileGroupId: insertMessage.fileGroupId || null,
+      groupIndex: insertMessage.groupIndex || null,
     };
     this.messages.set(id, message);
     await this.incrementRoomMessageCount(insertMessage.roomId);

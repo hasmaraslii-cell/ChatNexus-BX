@@ -5,20 +5,28 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Copy, Reply, Download, User, Edit, Trash2, MoreHorizontal, Mic } from "lucide-react";
+import EmojiReactions from "@/components/emoji-reactions";
+import PollMessage from "@/components/poll-message";
+import FileGroupDisplay from "@/components/file-group-display";
 import type { MessageWithUser, User as UserType } from "@shared/schema";
 
 interface MessageItemProps {
   message: MessageWithUser;
   currentUser?: UserType;
   onReply?: (message: MessageWithUser) => void;
+  allMessages?: MessageWithUser[];
 }
 
-export default function MessageItem({ message, currentUser, onReply }: MessageItemProps) {
+export default function MessageItem({ message, currentUser, onReply, allMessages = [] }: MessageItemProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content || "");
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const [swipeDistance, setSwipeDistance] = useState(0);
+  const [startX, setStartX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const touchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const messageRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -123,10 +131,35 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
     setEditContent(message.content || "");
   };
 
-  const handleDelete = () => {
-    if (window.confirm("Bu mesajı silmek istediğinizden emin misiniz?")) {
-      deleteMessageMutation.mutate();
+  // Touch handlers for swipe-to-reply
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setStartX(touch.clientX);
+    setIsDragging(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!startX) return;
+    
+    const touch = e.touches[0];
+    const currentX = touch.clientX;
+    const deltaX = currentX - startX;
+    
+    // Only allow right swipe (positive deltaX)
+    if (deltaX > 0 && deltaX < 100) {
+      setSwipeDistance(deltaX);
+      setIsDragging(true);
     }
+  };
+
+  const handleTouchEnd = () => {
+    if (swipeDistance > 50 && onReply) {
+      onReply(message);
+    }
+    
+    setSwipeDistance(0);
+    setStartX(0);
+    setIsDragging(false);
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -134,16 +167,9 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
     setShowContextMenu(true);
   };
 
-  const handleTouchStart = () => {
-    touchTimeoutRef.current = setTimeout(() => {
-      setShowContextMenu(true);
-    }, 500); // 500ms long press
-  };
-
-  const handleTouchEnd = () => {
-    if (touchTimeoutRef.current) {
-      clearTimeout(touchTimeoutRef.current);
-      touchTimeoutRef.current = null;
+  const handleDelete = () => {
+    if (window.confirm("Bu mesajı silmek istediğinizden emin misiniz?")) {
+      deleteMessageMutation.mutate();
     }
   };
 
@@ -275,9 +301,12 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
 
   return (
     <div 
+      ref={messageRef}
       className="message-group flex items-start space-x-3 p-2 rounded-lg transition-all duration-200 group hover:bg-[var(--discord-dark)]/40"
+      style={{ transform: `translateX(${swipeDistance}px)` }}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {/* User Avatar */}
@@ -440,6 +469,23 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
         )}
         
         {/* Voice Message - Discord Style */}
+        {/* Poll Message */}
+        {message.messageType === "poll" && message.pollData && (
+          <PollMessage 
+            message={message}
+            currentUser={currentUser}
+            pollData={message.pollData}
+          />
+        )}
+        
+        {/* File Group Display for multiple files */}
+        {message.fileGroupId && allMessages && (
+          <FileGroupDisplay 
+            messages={allMessages}
+            fileGroupId={message.fileGroupId}
+          />
+        )}
+        
         {message.messageType === "voice" && message.filePath && (
           <div className="bg-gradient-to-r from-[#5865f2]/10 to-[#7983f5]/5 border border-[#5865f2]/20 rounded-lg p-4 max-w-sm mb-3 shadow-sm backdrop-blur-sm">
             <div className="flex items-center space-x-4">
@@ -513,6 +559,12 @@ export default function MessageItem({ message, currentUser, onReply }: MessageIt
             </div>
           </div>
         )}
+
+        {/* Emoji Reactions */}
+        <EmojiReactions 
+          message={message}
+          currentUser={currentUser}
+        />
       </div>
       
       {/* Message Actions */}
