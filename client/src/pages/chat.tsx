@@ -91,15 +91,15 @@ export default function Chat() {
   const { data: onlineUsers, refetch: refetchUsers } = useQuery({
     queryKey: ["/api/users/online"],
     enabled: !!currentUser,
-    refetchInterval: isMobile ? 20000 : 15000, // Slower on mobile for performance
-    staleTime: isMobile ? 15000 : 10000, // Longer cache on mobile
+    refetchInterval: isMobile ? 30000 : 20000, // Reduced frequency
+    staleTime: isMobile ? 25000 : 15000, // Longer cache
   });
 
   const { data: offlineUsers } = useQuery({
     queryKey: ["/api/users/offline"],
     enabled: !!currentUser,
-    refetchInterval: isMobile ? 120000 : 60000, // Much slower on mobile
-    staleTime: isMobile ? 60000 : 30000, // Longer cache on mobile
+    refetchInterval: isMobile ? 180000 : 120000, // Much slower refresh
+    staleTime: isMobile ? 120000 : 90000, // Longer cache
   });
 
   // Set default room when rooms are loaded
@@ -148,7 +148,7 @@ export default function Chat() {
       }
     };
 
-    const interval = setInterval(syncCurrentUser, 2000); // Sync every 2 seconds
+    const interval = setInterval(syncCurrentUser, 5000); // Reduced frequency to 5 seconds
     return () => clearInterval(interval);
   }, [currentUser]);
 

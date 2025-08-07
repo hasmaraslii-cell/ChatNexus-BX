@@ -34,21 +34,21 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
 
   const { data: messages, refetch: refetchMessages } = useQuery({
     queryKey: ["/api/rooms", currentRoom.id, "messages"],
-    refetchInterval: window.innerWidth <= 768 ? 5000 : 3000, // Slower on mobile
-    staleTime: window.innerWidth <= 768 ? 2000 : 1000, // Longer cache on mobile
+    refetchInterval: window.innerWidth <= 768 ? 8000 : 5000, // Much slower refresh
+    staleTime: window.innerWidth <= 768 ? 5000 : 3000, // Longer cache
   });
 
   const { data: allUsers } = useQuery({
     queryKey: ["/api/users"],
     enabled: !!currentUser,
-    staleTime: 30000, // Cache users for mentions
+    staleTime: 60000, // Cache users longer for mentions
   });
 
   const { data: typingUsers = [] } = useQuery({
     queryKey: ["/api/rooms", currentRoom.id, "typing"],
     enabled: !!currentUser && !!currentRoom,
-    refetchInterval: window.innerWidth <= 768 ? 4000 : 2000, // Slower on mobile
-    staleTime: window.innerWidth <= 768 ? 2000 : 1000, // Longer cache on mobile
+    refetchInterval: window.innerWidth <= 768 ? 8000 : 5000, // Much slower refresh
+    staleTime: window.innerWidth <= 768 ? 4000 : 2000, // Longer cache
   });
 
   const sendMessageMutation = useMutation({
@@ -442,16 +442,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
                 />
               </div>
               
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0"
-                title="Emoji"
-                data-testid="button-emoji"
-              >
-                <Smile className="w-4 h-4 md:w-5 md:h-5" />
-              </Button>
+
 
               <Button
                 type="submit"

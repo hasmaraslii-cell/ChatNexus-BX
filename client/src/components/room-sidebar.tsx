@@ -31,7 +31,8 @@ export default function RoomSidebar({
   const { data: dmRooms } = useQuery({
     queryKey: ["/api/dm", currentUser.id],
     enabled: !!currentUser,
-    staleTime: 30000,
+    staleTime: 60000, // Longer cache for DM rooms
+    refetchInterval: 60000, // Only refresh once per minute
   });
 
   const getMessageCount = (room: Room) => {
