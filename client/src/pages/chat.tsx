@@ -301,6 +301,7 @@ export default function Chat() {
           onEditProfile={handleEditProfile}
           onBanUser={handleBanUser}
           onStartDM={handleStartDM}
+          onLogout={handleLogout}
         />
       </div>
 

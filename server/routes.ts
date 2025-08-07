@@ -301,6 +301,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "Kullanıcı bulunamadı" });
       }
+
+      // Check for @mentions in DM messages to create group chats
+      if (messageData.content && room.name.startsWith("@")) {
+        const mentionRegex = /@(\w+)/g;
+        let match;
+        const mentionedUsernames = [];
+        
+        while ((match = mentionRegex.exec(messageData.content)) !== null) {
+          mentionedUsernames.push(match[1]);
+        }
+        
+        if (mentionedUsernames.length > 0) {
+          // Get all mentioned users
+          const allUsers = await storage.getAllUsers();
+          const mentionedUsers = mentionedUsernames
+            .map(username => allUsers.find(u => u && u.username.toLowerCase() === username.toLowerCase()))
+            .filter(user => user !== undefined);
+          
+          if (mentionedUsers.length > 0) {
+            // Convert DM to group by updating room name
+            const currentParticipants = room.name.replace("@", "").split(", ");
+            const allParticipants = currentParticipants.concat(mentionedUsers.map(u => u!.username));
+            const uniqueParticipants = Array.from(new Set(allParticipants)).sort();
+            
+            const newRoomName = `@${uniqueParticipants.join(", ")}`;
+            await storage.updateRoomName(room.id, newRoomName);
+          }
+        }
+      }
       
       const message = await storage.createMessage(messageData);
       const messageWithUser = { ...message, user };
@@ -310,24 +339,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // File upload route
-  app.post("/api/upload", upload.single('file'), async (req, res) => {
+  // Multiple file upload route
+  app.post("/api/upload", upload.array('files', 20), async (req, res) => {
     try {
-      if (!req.file) {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
         return res.status(400).json({ message: "Dosya seçilmedi" });
       }
 
-      const fileInfo = {
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
-        mimetype: req.file.mimetype,
-        path: `/uploads/${req.file.filename}`
-      };
+      const fileInfos = files.map(file => ({
+        filename: file.filename,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+        path: `/uploads/${file.filename}`
+      }));
 
-      res.json(fileInfo);
+      res.json(fileInfos);
     } catch (error) {
       res.status(500).json({ message: "Dosya yüklenemedi" });
+    }
+  });
+
+  // Grouped file message route
+  app.post("/api/messages/files", async (req, res) => {
+    try {
+      const { roomId, userId, files } = req.body;
+      
+      if (!files || !Array.isArray(files) || files.length === 0) {
+        return res.status(400).json({ message: "Dosya bilgisi eksik" });
+      }
+
+      // Verify room exists
+      const room = await storage.getRoom(roomId);
+      if (!room) {
+        return res.status(404).json({ message: "Oda bulunamadı" });
+      }
+      
+      // Verify user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+      }
+
+      // Generate a unique group ID for all files
+      const { nanoid } = await import('nanoid');
+      const fileGroupId = nanoid();
+
+      // Create messages for all files with the same group ID
+      const messages = [];
+      for (const file of files) {
+        const messageType = file.mimetype.startsWith('image/') ? 'image' :
+                          file.mimetype.startsWith('video/') ? 'video' : 'file';
+        
+        const messageData = {
+          roomId,
+          userId,
+          messageType,
+          fileName: file.originalName,
+          filePath: file.path,
+          fileSize: file.size,
+          fileGroupId: files.length > 1 ? fileGroupId : null
+        };
+
+        const message = await storage.createMessage(messageData);
+        messages.push({ ...message, user });
+      }
+
+      res.json(messages);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Dosyalar gönderilemedi" });
     }
   });
 

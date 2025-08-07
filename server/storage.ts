@@ -25,6 +25,7 @@ export interface IStorage {
   getAllRooms(): Promise<RoomWithMessageCount[]>;
   incrementRoomMessageCount(roomId: string): Promise<void>;
   deleteRoom(id: string): Promise<boolean>;
+  updateRoomName(id: string, name: string): Promise<boolean>;
 
   // Messages
   getMessage(id: string): Promise<Message | undefined>;
@@ -226,6 +227,29 @@ export class MemStorage implements IStorage {
       const updatedRoom = { ...room, messageCount: (room.messageCount || 0) + 1 };
       this.rooms.set(roomId, updatedRoom);
     }
+  }
+
+  async updateRoomName(id: string, name: string): Promise<boolean> {
+    const room = this.rooms.get(id);
+    if (room) {
+      const updatedRoom = { ...room, name };
+      this.rooms.set(id, updatedRoom);
+      return true;
+    }
+    return false;
+  }
+
+  async deleteRoom(id: string): Promise<boolean> {
+    const deleted = this.rooms.delete(id);
+    if (deleted) {
+      // Also delete all messages in this room
+      for (const [messageId, message] of this.messages.entries()) {
+        if (message.roomId === id) {
+          this.messages.delete(messageId);
+        }
+      }
+    }
+    return deleted;
   }
 
   // Messages

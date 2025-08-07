@@ -132,18 +132,72 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     }
   };
 
-  const handleFileUpload = (fileInfo: any) => {
-    const messageType = fileInfo.mimetype.startsWith('image/') ? 'image' : 
-                       fileInfo.mimetype.startsWith('video/') ? 'video' : 'file';
+  const handleFileUpload = async (files: FileList | File[]) => {
+    if (!currentUser || !currentRoom) return;
+
+    const fileArray = Array.isArray(files) ? files : Array.from(files);
     
-    sendMessageMutation.mutate({
-      roomId: currentRoom.id,
-      userId: currentUser.id,
-      messageType,
-      fileName: fileInfo.originalName,
-      filePath: fileInfo.path,
-      fileSize: fileInfo.size,
+    // Check file sizes
+    const oversizedFiles = fileArray.filter(file => file.size > 50 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      toast({
+        title: "Dosya çok büyük",
+        description: `${oversizedFiles.length} dosya 50MB'dan büyük`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    fileArray.forEach(file => {
+      formData.append('files', file);
     });
+
+    try {
+      // Upload all files
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Dosyalar yüklenemedi');
+      }
+
+      const fileInfos = await uploadResponse.json();
+      
+      // Create grouped messages
+      const response = await fetch('/api/messages/files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId: currentRoom.id,
+          userId: currentUser.id,
+          files: fileInfos
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Mesajlar oluşturulamadı');
+      }
+
+      // Refresh messages
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/rooms/${currentRoom.id}/messages`] 
+      });
+
+      toast({
+        title: "Başarılı",
+        description: `${fileArray.length} dosya gönderildi`,
+      });
+
+    } catch (error) {
+      toast({
+        title: "Hata",
+        description: "Dosyalar gönderilemedi",
+        variant: "destructive",
+      });
+    }
 
     setShowFileUpload(false);
   };

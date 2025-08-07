@@ -375,7 +375,13 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
         )}
 
         <div className="flex items-baseline space-x-2 mb-1">
-          <span className="font-semibold text-[var(--discord-light)] hover:underline cursor-pointer">
+          <span 
+            className="font-semibold text-[var(--discord-light)] hover:underline cursor-pointer"
+            onClick={() => {
+              // Navigate to DM with this user
+              window.location.href = `/chat?dm=${message.user.id}`;
+            }}
+          >
             {message.user.username}
           </span>
           <span className="text-xs text-[var(--discord-light)]/50">
