@@ -328,19 +328,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
           </div>
         )}
         
-        {(!messages || !Array.isArray(messages) || messages.length === 0) && (
-          <div className="flex items-center justify-center flex-1">
-            <div className="text-center">
-              <Hash className="w-16 h-16 text-[var(--discord-light)]/20 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-[var(--discord-light)] mb-2">
-                #{currentRoom.name} kanalına hoş geldiniz!
-              </h3>
-              <p className="text-[var(--discord-light)]/50">
-                Bu kanalın başlangıcıdasınız.
-              </p>
-            </div>
-          </div>
-        )}
+
         
         {/* Typing Indicator */}
         {Array.isArray(typingUsers) && typingUsers.length > 0 && (

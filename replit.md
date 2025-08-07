@@ -13,6 +13,11 @@ Recent Customizations (Aug 2025):
 - Simplified UI: Removed admin panel and attachment menus from header
 - New channel structure with emoji-based naming
 - Custom logo integration: https://i.imgur.com/DvliwXN.png
+- Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
+- File upload limits: 50MB max, up to 20 files simultaneously
+- Simplified UI: Removed admin panel and attachment menus from header
+- New channel structure with emoji-based naming
+- Custom logo integration: https://i.imgur.com/DvliwXN.png
 
 ## System Architecture
 

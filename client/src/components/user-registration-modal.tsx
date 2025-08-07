@@ -148,7 +148,7 @@ export default function UserRegistrationModal({ onUserCreated }: UserRegistratio
                 <Button
                   type="button"
                   onClick={() => document.getElementById('profileImage')?.click()}
-                  className="bg-gradient-primary hover:opacity-80"
+                  className="bg-gradient-primary hover:opacity-80 text-white"
                   disabled={createUserMutation.isPending}
                 >
                   <Camera className="w-4 h-4 mr-2" />
