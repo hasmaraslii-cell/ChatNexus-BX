@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
@@ -19,10 +19,15 @@ export default function ImagePreviewModal({ isOpen, onClose, images, initialInde
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [zoom, setZoom] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [lastTouch, setLastTouch] = useState({ x: 0, y: 0 });
+  const imageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
     setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
   }, [initialIndex, isOpen]);
 
   const currentImage = images[currentIndex];
@@ -30,12 +35,14 @@ export default function ImagePreviewModal({ isOpen, onClose, images, initialInde
   const handlePrevious = () => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
     setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
     setIsLoading(true);
   };
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
     setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
     setIsLoading(true);
   };
 
@@ -44,7 +51,49 @@ export default function ImagePreviewModal({ isOpen, onClose, images, initialInde
   };
 
   const handleZoomOut = () => {
-    setZoom((prev) => Math.max(prev - 0.5, 0.5));
+    const newZoom = Math.max(zoom - 0.5, 0.5);
+    setZoom(newZoom);
+    if (newZoom === 1) {
+      setPanOffset({ x: 0, y: 0 });
+    }
+  };
+
+  // Touch and pan handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsPanning(true);
+      setLastTouch({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    } else if (e.touches.length === 2) {
+      // Pinch zoom logic could be added here
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isPanning && zoom > 1) {
+      e.preventDefault();
+      const deltaX = e.touches[0].clientX - lastTouch.x;
+      const deltaY = e.touches[0].clientY - lastTouch.y;
+      
+      setPanOffset(prev => ({
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
+      }));
+      
+      setLastTouch({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsPanning(false);
+  };
+
+  const handleDoubleClick = () => {
+    if (zoom === 1) {
+      setZoom(2);
+    } else {
+      setZoom(1);
+      setPanOffset({ x: 0, y: 0 });
+    }
   };
 
   const handleDownload = async () => {
@@ -171,16 +220,21 @@ export default function ImagePreviewModal({ isOpen, onClose, images, initialInde
           )}
           
           <img
+            ref={imageRef}
             src={currentImage.src}
             alt={currentImage.alt}
-            className="max-w-none object-contain transition-transform duration-200 ease-in-out select-none"
+            className="max-w-none object-contain transition-transform duration-200 ease-in-out select-none cursor-move"
             style={{
-              transform: `scale(${zoom})`,
+              transform: `scale(${zoom}) translate(${panOffset.x / zoom}px, ${panOffset.y / zoom}px)`,
               maxHeight: zoom === 1 ? 'calc(100vh - 120px)' : 'none',
               maxWidth: zoom === 1 ? 'calc(100vw - 40px)' : 'none',
             }}
             onLoad={() => setIsLoading(false)}
             onError={() => setIsLoading(false)}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onDoubleClick={handleDoubleClick}
             draggable={false}
           />
         </div>
@@ -211,7 +265,12 @@ export default function ImagePreviewModal({ isOpen, onClose, images, initialInde
         {/* Bottom hint */}
         <div className="absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4">
           <div className="text-center text-white/70 text-sm">
-            Klavye: ← → gezinme, +/- yakınlaştırma, ESC çıkış
+            <span className="hidden sm:block">Klavye: ← → gezinme, +/- yakınlaştırma, ESC çıkış</span>
+            <span className="sm:hidden">Çift dokun: yakınlaştır • Sürükle: kaydır • Yan kaydır: sonraki</span>
+          </div>
+          {/* Mobile zoom indicator */}
+          <div className="sm:hidden text-center text-white/70 text-xs mt-1">
+            {Math.round(zoom * 100)}% yakınlaştırma
           </div>
         </div>
       </DialogContent>

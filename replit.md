@@ -14,9 +14,11 @@ Recent Customizations (Aug 2025):
 - **COMPLETED**: Enhanced file upload system with grouped display in single messages
 - **COMPLETED**: Made user list sidebar scrollable with proper mobile support
 - **COMPLETED**: Database schema updates and migrations applied successfully
-- **IN PROGRESS**: Fixed LSP diagnostics and storage errors
-- **IN PROGRESS**: Optimized polling frequencies to reduce server load and improve performance
-- **IN PROGRESS**: Fixed profile editing and username changing functionality
+- **COMPLETED**: Fixed LSP diagnostics and storage errors
+- **COMPLETED**: Optimized polling frequencies to reduce server load and improve performance  
+- **COMPLETED**: Fixed profile editing and username changing functionality
+- **COMPLETED**: Removed logout button from user list sidebar
+- **COMPLETED**: Added mobile touch zoom and pan features for image preview
 - **COMPLETED**: Removed non-functional permissions modal
 - **COMPLETED**: Added notification system for new messages
 - Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees

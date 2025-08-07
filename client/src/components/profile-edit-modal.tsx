@@ -168,11 +168,14 @@ export default function ProfileEditModal({ user, isOpen, onClose, onProfileUpdat
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-[var(--discord-darker)] border-[var(--discord-dark)]">
+      <DialogContent className="sm:max-w-md bg-[var(--discord-darker)] border-[var(--discord-dark)]" aria-describedby="profile-description">
         <DialogHeader>
           <DialogTitle className="text-[var(--discord-light)]">
             Profili Düzenle
           </DialogTitle>
+          <div id="profile-description" className="sr-only">
+            Kullanıcı adınızı ve profil fotoğrafınızı güncelleyin
+          </div>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">

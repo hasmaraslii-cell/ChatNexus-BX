@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, UserCog, Ban, Shield } from "lucide-react";
-import LogoutButton from "@/components/logout-button";
+
 import type { User } from "@shared/schema";
 
 interface UserListSidebarProps {
@@ -12,7 +12,7 @@ interface UserListSidebarProps {
   onEditProfile?: (user: User) => void;
   onBanUser?: (user: User) => void;
   onStartDM?: (user: User) => void;
-  onLogout?: () => void;
+
 }
 
 export default function UserListSidebar({ 
@@ -21,8 +21,7 @@ export default function UserListSidebar({
   currentUserId, 
   onEditProfile, 
   onBanUser,
-  onStartDM,
-  onLogout
+  onStartDM
 }: UserListSidebarProps) {
   const [showOnline, setShowOnline] = useState(true);
   const [showOffline, setShowOffline] = useState(true);
@@ -132,15 +131,7 @@ export default function UserListSidebar({
           </Button>
         )}
         
-        {/* Logout Button for Current User */}
-        {onLogout && user.id === currentUserId && (
-          <div className="ml-2">
-            <LogoutButton 
-              currentUser={user}
-              onLogout={onLogout}
-            />
-          </div>
-        )}
+
         
         {onBanUser && currentUser?.isAdmin && user.id !== currentUserId && (
           <Button
