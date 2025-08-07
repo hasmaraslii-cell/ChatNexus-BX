@@ -5,9 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Copy, Reply, Download, User, Edit, Trash2, MoreHorizontal, Mic } from "lucide-react";
-import EmojiReactions from "@/components/emoji-reactions";
-import PollMessage from "@/components/poll-message";
-import FileGroupDisplay from "@/components/file-group-display";
+// Components removed - implementing features directly
 import type { MessageWithUser, User as UserType } from "@shared/schema";
 
 interface MessageItemProps {
@@ -165,6 +163,29 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     setShowContextMenu(true);
+  };
+
+  const handlePollVote = async (optionIndex: number) => {
+    if (!currentUser) return;
+    
+    try {
+      const response = await fetch(`/api/messages/${message.id}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ optionIndex, userId: currentUser.id }),
+      });
+      
+      if (!response.ok) throw new Error("Oy verilemedi");
+      
+      // Refresh messages to show updated poll results
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms", message.roomId, "messages"] });
+    } catch (error) {
+      toast({
+        title: "Hata",
+        description: "Oy verilemedi",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDelete = () => {
@@ -470,21 +491,70 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
         
         {/* Voice Message - Discord Style */}
         {/* Poll Message */}
-        {message.messageType === "poll" && message.pollData && (
-          <PollMessage 
-            message={message}
-            currentUser={currentUser}
-            pollData={message.pollData}
-          />
+        {message.messageType === "poll" && message.pollQuestion && message.pollOptions && (
+          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-4 max-w-md mb-3 shadow-sm">
+            <h4 className="font-semibold text-[var(--discord-light)] mb-3">{message.pollQuestion}</h4>
+            <div className="space-y-2">
+              {message.pollOptions.map((option: string, index: number) => {
+                const votes = message.pollVotes ? (message.pollVotes[index] || 0) : 0;
+                const totalVotes = message.pollVotes ? Object.values(message.pollVotes).reduce((a: number, b: number) => Number(a) + Number(b), 0) : 0;
+                const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+                
+                return (
+                  <button
+                    key={index}
+                    className="w-full text-left p-2 rounded bg-[var(--discord-darker)]/50 hover:bg-[var(--discord-darker)] transition-colors border border-[var(--discord-dark)]"
+                    onClick={() => handlePollVote(index)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-[var(--discord-light)]">{option}</span>
+                      <span className="text-[var(--discord-light)]/70 text-sm">
+                        {percentage}% ({votes})
+                      </span>
+                    </div>
+                    <div className="mt-1 bg-[var(--discord-dark)] rounded-full h-1 overflow-hidden">
+                      <div 
+                        className="bg-blue-500 h-full transition-all duration-300"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-2 text-xs text-[var(--discord-light)]/50">
+              Toplam oy: {message.pollVotes ? Object.values(message.pollVotes).reduce((a: number, b: number) => Number(a) + Number(b), 0) : 0}
+            </div>
+          </div>
         )}
         
         {/* File Group Display for multiple files */}
-        {message.fileGroupId && allMessages && (
-          <FileGroupDisplay 
-            messages={allMessages}
-            fileGroupId={message.fileGroupId}
-          />
-        )}
+        {message.fileGroupId && allMessages && (() => {
+          const groupMessages = allMessages.filter(msg => msg.fileGroupId === message.fileGroupId);
+          const isFirstInGroup = groupMessages[0]?.id === message.id;
+          
+          if (!isFirstInGroup) return null;
+          
+          return (
+            <div className="bg-[var(--discord-darker)]/30 rounded-lg p-3 border border-[var(--discord-dark)] mb-2">
+              <div className="text-xs text-[var(--discord-light)]/70 mb-2">
+                {groupMessages.length} dosya paylaşıldı
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {groupMessages.map((fileMsg) => (
+                  <div key={fileMsg.id} className="bg-[var(--discord-dark)] rounded p-2 text-center">
+                    <div className="text-xs text-[var(--discord-light)]/70 truncate">
+                      {fileMsg.fileName}
+                    </div>
+                    <div className="text-xs text-[var(--discord-light)]/50">
+                      {fileMsg.fileSize ? `${(fileMsg.fileSize / (1024 * 1024)).toFixed(1)} MB` : ''}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         
         {message.messageType === "voice" && message.filePath && (
           <div className="bg-gradient-to-r from-[#5865f2]/10 to-[#7983f5]/5 border border-[#5865f2]/20 rounded-lg p-4 max-w-sm mb-3 shadow-sm backdrop-blur-sm">
@@ -560,11 +630,7 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
           </div>
         )}
 
-        {/* Emoji Reactions */}
-        <EmojiReactions 
-          message={message}
-          currentUser={currentUser}
-        />
+
       </div>
       
       {/* Message Actions */}

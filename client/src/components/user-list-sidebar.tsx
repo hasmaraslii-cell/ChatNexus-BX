@@ -44,16 +44,16 @@ export default function UserListSidebar({
     if (user.status === "online") {
       return "Çevrimiçi";
     } else {
-      // Show last seen time for offline users
+      // Show "En Son Aktifti: HH:MM" format for offline users
       if (user.lastSeen) {
         const lastSeenDate = new Date(user.lastSeen);
         const time = lastSeenDate.toLocaleTimeString("tr-TR", {
           hour: "2-digit",
           minute: "2-digit",
         });
-        return `Son Görülme: ${time}`;
+        return `En Son Aktifti: ${time}`;
       }
-      return "Son Görülme: Bilinmiyor";
+      return "En Son Aktifti: Bilinmiyor";
     }
   };
 
@@ -152,7 +152,15 @@ export default function UserListSidebar({
         </h3>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-4">
+      <div 
+        className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-4"
+        style={{ 
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'var(--discord-light) transparent'
+        }}
+      >
         {/* Online Users Section */}
         <div>
           <Button

@@ -456,6 +456,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Poll voting endpoint
+  app.post("/api/messages/:id/vote", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { optionIndex, userId } = req.body;
+      
+      const message = await storage.getMessage(id);
+      if (!message || message.messageType !== "poll") {
+        return res.status(404).json({ error: "Anket mesajı bulunamadı" });
+      }
+      
+      // Initialize poll votes if not exists
+      if (!message.pollVotes) {
+        message.pollVotes = {};
+      }
+      
+      // Initialize vote count for this option if not exists
+      if (!message.pollVotes[optionIndex]) {
+        message.pollVotes[optionIndex] = 0;
+      }
+      
+      // Increment vote count
+      message.pollVotes[optionIndex]++;
+      
+      res.json({ success: true, votes: message.pollVotes });
+    } catch (error) {
+      console.error("Error voting in poll:", error);
+      res.status(500).json({ error: "Oy verilemedi" });
+    }
+  });
+
   // DM routes
   app.post("/api/dm/create", async (req, res) => {
     try {

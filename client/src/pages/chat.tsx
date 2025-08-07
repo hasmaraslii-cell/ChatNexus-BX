@@ -170,17 +170,18 @@ export default function Chat() {
     setShowRegistration(true);
   };
 
-  const handleEditProfile = (user: User) => {
-    setProfileEditUser(user);
-    if (isMobile) {
-      setShowUserSidebar(false);
-    }
-  };
-
   const handleProfileUpdate = (updatedUser: User) => {
     // Update the current user state immediately to reflect changes in sidebar
     if (currentUser && updatedUser.id === currentUser.id) {
       setCurrentUser(updatedUser);
+    }
+  };
+
+  const handleEditProfile = (user: User) => {
+    setProfileEditUser(user);
+    if (isMobile) {
+      setShowRoomSidebar(false);
+      setShowUserSidebar(false);
     }
   };
 
@@ -270,6 +271,7 @@ export default function Chat() {
           currentUser={currentUser}
           onRoomChange={handleRoomChange}
           onLogout={handleLogout}
+          onEditProfile={handleEditProfile}
         />
       </div>
 

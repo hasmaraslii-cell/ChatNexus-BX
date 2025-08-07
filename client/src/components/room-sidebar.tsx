@@ -17,6 +17,7 @@ interface RoomSidebarProps {
   currentUser: UserType;
   onRoomChange: (room: Room) => void;
   onLogout?: () => void;
+  onEditProfile?: (user: UserType) => void;
 }
 
 export default function RoomSidebar({ 
@@ -24,7 +25,8 @@ export default function RoomSidebar({
   currentRoom, 
   currentUser, 
   onRoomChange,
-  onLogout
+  onLogout,
+  onEditProfile
 }: RoomSidebarProps) {
   const [showDMs, setShowDMs] = useState(true);
 
@@ -200,6 +202,15 @@ export default function RoomSidebar({
               side="top"
               align="end"
             >
+              {onEditProfile && (
+                <DropdownMenuItem 
+                  className="text-[var(--discord-light)] hover:text-[var(--discord-blurple)] hover:bg-[var(--discord-blurple)]/20"
+                  onClick={() => onEditProfile(currentUser)}
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Profili Düzenle
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem 
                 className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
                 onClick={onLogout}
