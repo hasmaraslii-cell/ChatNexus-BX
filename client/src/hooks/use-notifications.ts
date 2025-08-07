@@ -41,8 +41,7 @@ export function useNotifications(currentUser?: User) {
       tag: `message-${message.id}`,
       badge: '/favicon.ico',
       silent: false,
-      requireInteraction: false,
-      timestamp: Date.now()
+      requireInteraction: false
     });
   };
 

@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Hash, Paperclip, Search, Bell, Plus, Smile, Send, X, Mic, MicOff, Reply } from "lucide-react";
 import MessageItem from "@/components/message-item";
 import FileUploadArea from "@/components/file-upload-area";
+import { useNotifications } from "@/hooks/use-notifications";
 
 import type { Room, User, MessageWithUser, TypingIndicator } from "@shared/schema";
 
@@ -34,11 +35,13 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { sendMessageNotification } = useNotifications(currentUser);
 
   const { data: messages, refetch: refetchMessages } = useQuery({
     queryKey: ["/api/rooms", currentRoom.id, "messages"],
-    refetchInterval: window.innerWidth <= 768 ? 8000 : 5000, // Much slower refresh
-    staleTime: window.innerWidth <= 768 ? 5000 : 3000, // Longer cache
+    refetchInterval: window.innerWidth <= 768 ? 10000 : 8000, // Reduced ping frequency
+    staleTime: window.innerWidth <= 768 ? 8000 : 6000, // Longer cache
+
   });
 
   const { data: allUsers } = useQuery({
@@ -50,8 +53,8 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
   const { data: typingUsers = [] } = useQuery({
     queryKey: ["/api/rooms", currentRoom.id, "typing"],
     enabled: !!currentUser && !!currentRoom,
-    refetchInterval: window.innerWidth <= 768 ? 8000 : 5000, // Much slower refresh
-    staleTime: window.innerWidth <= 768 ? 4000 : 2000, // Longer cache
+    refetchInterval: window.innerWidth <= 768 ? 12000 : 10000, // Reduced ping frequency  
+    staleTime: window.innerWidth <= 768 ? 8000 : 6000, // Longer cache
   });
 
   const sendMessageMutation = useMutation({
@@ -80,10 +83,18 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     },
   });
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive and send notifications
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    
+    // Send notifications for new messages (only if we had previous messages)
+    if (Array.isArray(messages) && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage && lastMessage.userId !== currentUser.id) {
+        sendMessageNotification(lastMessage);
+      }
+    }
+  }, [messages, currentUser.id, sendMessageNotification]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -147,7 +158,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     }
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('files', file);
 
     try {
       // Upload file
@@ -162,7 +173,8 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
 
       const uploadResult = await uploadResponse.json();
       
-      if (uploadResult.fileName) {
+      if (uploadResult && uploadResult.length > 0) {
+        const fileInfo = uploadResult[0];
         // Determine message type based on file type
         const messageType = file.type.startsWith('image/') ? 'image' : 'file';
         
@@ -170,9 +182,9 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
           roomId: currentRoom.id,
           userId: currentUser.id,
           messageType,
-          fileName: uploadResult.fileName,
-          filePath: uploadResult.filePath,
-          fileSize: uploadResult.fileSize
+          fileName: fileInfo.originalName,
+          filePath: fileInfo.path,
+          fileSize: fileInfo.size
         };
 
         sendMessageMutation.mutate(messageData);
@@ -207,7 +219,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
       recorder.addEventListener("stop", () => {
         const audioBlob = new Blob(chunks, { type: "audio/webm" });
         const formData = new FormData();
-        formData.append("file", audioBlob, "voice-message.webm");
+        formData.append("files", audioBlob, "voice-message.webm");
         
         // Upload voice message
         fetch("/api/upload", {
@@ -215,15 +227,18 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
           body: formData,
         })
         .then(response => response.json())
-        .then(fileInfo => {
-          sendMessageMutation.mutate({
-            roomId: currentRoom.id,
-            userId: currentUser.id,
-            messageType: "voice",
-            fileName: "Sesli Mesaj",
-            filePath: fileInfo.path,
-            fileSize: fileInfo.size,
-          });
+        .then(uploadResult => {
+          if (uploadResult && uploadResult.length > 0) {
+            const fileInfo = uploadResult[0];
+            sendMessageMutation.mutate({
+              roomId: currentRoom.id,
+              userId: currentUser.id,
+              messageType: "voice",
+              fileName: "Sesli Mesaj",
+              filePath: fileInfo.path,
+              fileSize: fileInfo.size,
+            });
+          }
         })
         .catch(error => {
           toast({

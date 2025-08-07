@@ -6,7 +6,7 @@ import UserListSidebar from "@/components/user-list-sidebar";
 import ProfileEditModal from "@/components/profile-edit-modal";
 import BanUserModal from "@/components/ban-user-modal";
 import MobileMenu from "@/components/mobile-menu";
-import PermissionsRequestModal from "@/components/permissions-request-modal";
+
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Users, Hash } from "lucide-react";
@@ -24,7 +24,7 @@ export default function Chat() {
   const [showRoomSidebar, setShowRoomSidebar] = useState(false);
   const [showUserSidebar, setShowUserSidebar] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<MessageWithUser | null>(null);
-  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+
   
   const startDMMutation = useMutation({
     mutationFn: async (targetUser: User) => {
@@ -84,14 +84,7 @@ export default function Chat() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
-  // Show permissions modal on first visit
-  useEffect(() => {
-    const hasSeenPermissions = localStorage.getItem("ibx-permissions-seen");
-    if (!hasSeenPermissions && currentUser) {
-      setTimeout(() => setShowPermissionsModal(true), 2000);
-      localStorage.setItem("ibx-permissions-seen", "true");
-    }
-  }, [currentUser]);
+  // Removed permissions modal - not needed anymore
 
   const { data: rooms } = useQuery({
     queryKey: ["/api/rooms"],
@@ -102,8 +95,8 @@ export default function Chat() {
   const { data: onlineUsers, refetch: refetchUsers } = useQuery({
     queryKey: ["/api/users/online"],
     enabled: !!currentUser,
-    refetchInterval: isMobile ? 30000 : 20000, // Reduced frequency
-    staleTime: isMobile ? 25000 : 15000, // Longer cache
+    refetchInterval: isMobile ? 45000 : 30000, // Further reduced frequency  
+    staleTime: isMobile ? 35000 : 25000, // Longer cache
   });
 
   const { data: offlineUsers } = useQuery({
@@ -159,7 +152,7 @@ export default function Chat() {
       }
     };
 
-    const interval = setInterval(syncCurrentUser, 5000); // Reduced frequency to 5 seconds
+    const interval = setInterval(syncCurrentUser, 10000); // Reduced frequency to 10 seconds
     return () => clearInterval(interval);
   }, [currentUser]);
 
@@ -344,11 +337,7 @@ export default function Chat() {
         onClose={() => setBanUser(null)}
       />
 
-      {/* Permissions Request Modal */}
-      <PermissionsRequestModal
-        isOpen={showPermissionsModal}
-        onClose={() => setShowPermissionsModal(false)}
-      />
+
     </div>
   );
 }
