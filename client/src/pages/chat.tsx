@@ -6,6 +6,7 @@ import UserListSidebar from "@/components/user-list-sidebar";
 import ProfileEditModal from "@/components/profile-edit-modal";
 import BanUserModal from "@/components/ban-user-modal";
 import MobileMenu from "@/components/mobile-menu";
+import PermissionsRequestModal from "@/components/permissions-request-modal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Users, Hash } from "lucide-react";
@@ -23,6 +24,7 @@ export default function Chat() {
   const [showRoomSidebar, setShowRoomSidebar] = useState(false);
   const [showUserSidebar, setShowUserSidebar] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<MessageWithUser | null>(null);
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   
   const startDMMutation = useMutation({
     mutationFn: async (targetUser: User) => {
@@ -81,6 +83,15 @@ export default function Chat() {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Show permissions modal on first visit
+  useEffect(() => {
+    const hasSeenPermissions = localStorage.getItem("ibx-permissions-seen");
+    if (!hasSeenPermissions && currentUser) {
+      setTimeout(() => setShowPermissionsModal(true), 2000);
+      localStorage.setItem("ibx-permissions-seen", "true");
+    }
+  }, [currentUser]);
 
   const { data: rooms } = useQuery({
     queryKey: ["/api/rooms"],
@@ -283,6 +294,7 @@ export default function Chat() {
           replyToMessage={replyToMessage}
           onClearReply={handleClearReply}
           onReply={handleReply}
+          onStartDM={handleStartDM}
         />
       </div>
 
@@ -330,6 +342,12 @@ export default function Chat() {
         user={banUser}
         isOpen={!!banUser}
         onClose={() => setBanUser(null)}
+      />
+
+      {/* Permissions Request Modal */}
+      <PermissionsRequestModal
+        isOpen={showPermissionsModal}
+        onClose={() => setShowPermissionsModal(false)}
       />
     </div>
   );

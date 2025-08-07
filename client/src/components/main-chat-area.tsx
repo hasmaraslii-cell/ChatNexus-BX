@@ -16,9 +16,10 @@ interface MainChatAreaProps {
   replyToMessage?: MessageWithUser | null;
   onClearReply?: () => void;
   onReply?: (message: MessageWithUser) => void;
+  onStartDM?: (user: User) => void;
 }
 
-export default function MainChatArea({ currentRoom, currentUser, replyToMessage, onClearReply, onReply }: MainChatAreaProps) {
+export default function MainChatArea({ currentRoom, currentUser, replyToMessage, onClearReply, onReply, onStartDM }: MainChatAreaProps) {
   const [message, setMessage] = useState("");
   const [showFileUpload, setShowFileUpload] = useState(false);
 
@@ -132,69 +133,59 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     }
   };
 
-  const handleFileUpload = async (files: FileList | File[]) => {
+  const handleFileUpload = async (file: File) => {
     if (!currentUser || !currentRoom) return;
 
-    const fileArray = Array.isArray(files) ? files : Array.from(files);
-    
-    // Check file sizes
-    const oversizedFiles = fileArray.filter(file => file.size > 50 * 1024 * 1024);
-    if (oversizedFiles.length > 0) {
+    // Check file size
+    if (file.size > 50 * 1024 * 1024) {
       toast({
         title: "Dosya çok büyük",
-        description: `${oversizedFiles.length} dosya 50MB'dan büyük`,
+        description: "Dosya 50MB'dan küçük olmalı",
         variant: "destructive",
       });
       return;
     }
 
     const formData = new FormData();
-    fileArray.forEach(file => {
-      formData.append('files', file);
-    });
+    formData.append('file', file);
 
     try {
-      // Upload all files
+      // Upload file
       const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
         body: formData
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Dosyalar yüklenemedi');
+        throw new Error('Dosya yüklenemedi');
       }
 
-      const fileInfos = await uploadResponse.json();
+      const uploadResult = await uploadResponse.json();
       
-      // Create grouped messages
-      const response = await fetch('/api/messages/files', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      if (uploadResult.fileName) {
+        // Determine message type based on file type
+        const messageType = file.type.startsWith('image/') ? 'image' : 'file';
+        
+        const messageData = {
           roomId: currentRoom.id,
           userId: currentUser.id,
-          files: fileInfos
-        })
-      });
+          messageType,
+          fileName: uploadResult.fileName,
+          filePath: uploadResult.filePath,
+          fileSize: uploadResult.fileSize
+        };
 
-      if (!response.ok) {
-        throw new Error('Mesajlar oluşturulamadı');
+        sendMessageMutation.mutate(messageData);
+        
+        toast({
+          title: "Başarılı",
+          description: "Dosya gönderildi",
+        });
       }
-
-      // Refresh messages
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/rooms/${currentRoom.id}/messages`] 
-      });
-
-      toast({
-        title: "Başarılı",
-        description: `${fileArray.length} dosya gönderildi`,
-      });
-
     } catch (error) {
       toast({
         title: "Hata",
-        description: "Dosyalar gönderilemedi",
+        description: "Dosya gönderilemedi",
         variant: "destructive",
       });
     }
@@ -377,6 +368,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
             currentUser={currentUser}
             onReply={onReply}
             allMessages={messages}
+            onStartDM={onStartDM}
           />
         ))}
         {(!messages || !Array.isArray(messages) || messages.length === 0) && (

@@ -14,9 +14,10 @@ interface MessageItemProps {
   currentUser?: UserType;
   onReply?: (message: MessageWithUser) => void;
   allMessages?: MessageWithUser[];
+  onStartDM?: (user: UserType) => void;
 }
 
-export default function MessageItem({ message, currentUser, onReply, allMessages = [] }: MessageItemProps) {
+export default function MessageItem({ message, currentUser, onReply, allMessages = [], onStartDM }: MessageItemProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content || "");
@@ -378,8 +379,9 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
           <span 
             className="font-semibold text-[var(--discord-light)] hover:underline cursor-pointer"
             onClick={() => {
-              // Navigate to DM with this user
-              window.location.href = `/chat?dm=${message.user.id}`;
+              if (onStartDM && currentUser?.id !== message.user.id) {
+                onStartDM(message.user);
+              }
             }}
           >
             {message.user.username}

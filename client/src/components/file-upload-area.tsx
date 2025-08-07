@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CloudUpload, X } from "lucide-react";
 
 interface FileUploadAreaProps {
-  onFileUpload: (files: FileList | File[]) => void;
+  onFileUpload: (file: File) => void;
 }
 
 export default function FileUploadArea({ onFileUpload }: FileUploadAreaProps) {
@@ -28,14 +28,14 @@ export default function FileUploadArea({ onFileUpload }: FileUploadAreaProps) {
     
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      onFileUpload(files);
+      onFileUpload(files[0]); // Only take first file
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      onFileUpload(files);
+      onFileUpload(files[0]); // Only take first file
     }
   };
 
@@ -61,7 +61,6 @@ export default function FileUploadArea({ onFileUpload }: FileUploadAreaProps) {
           onChange={handleFileSelect}
           className="hidden"
           accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip,.rar"
-          multiple
           disabled={false}
         />
         
@@ -79,7 +78,7 @@ export default function FileUploadArea({ onFileUpload }: FileUploadAreaProps) {
             </Button>
           </p>
           <p className="text-xs text-[var(--discord-light)]/50">
-            Maksimum 50MB, 20 dosyaya kadar - Resim, video, doküman desteklenir
+            Maksimum 50MB - Resim, video, doküman desteklenir
           </p>
         </div>
       </div>

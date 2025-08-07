@@ -98,11 +98,11 @@ export default function ImagePreviewModal({ isOpen, onClose, images, initialInde
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full bg-black/95 border-0 p-0 overflow-hidden">
+      <DialogContent className="max-w-full max-h-full w-screen h-screen bg-black/95 border-0 p-0 overflow-hidden sm:max-w-[95vw] sm:max-h-[95vh] sm:w-full sm:h-full">
         <DialogTitle className="sr-only">Image Preview</DialogTitle>
         
         {/* Header with controls */}
-        <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4">
+        <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-2 sm:p-4 safe-top">
           <div className="flex items-center justify-between text-white">
             <div className="flex items-center space-x-4">
               <h3 className="text-lg font-medium truncate max-w-md">
@@ -115,18 +115,18 @@ export default function ImagePreviewModal({ isOpen, onClose, images, initialInde
               )}
             </div>
             
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleZoomOut}
                 disabled={zoom <= 0.5}
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 h-8 w-8 p-1 sm:h-auto sm:w-auto sm:p-2 hidden sm:flex"
               >
                 <ZoomOut className="w-4 h-4" />
               </Button>
               
-              <span className="text-sm bg-black/50 px-2 py-1 rounded min-w-[60px] text-center">
+              <span className="text-xs sm:text-sm bg-black/50 px-1 py-0.5 sm:px-2 sm:py-1 rounded min-w-[50px] sm:min-w-[60px] text-center hidden sm:block">
                 {Math.round(zoom * 100)}%
               </span>
               
@@ -135,7 +135,7 @@ export default function ImagePreviewModal({ isOpen, onClose, images, initialInde
                 size="sm"
                 onClick={handleZoomIn}
                 disabled={zoom >= 3}
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 h-8 w-8 p-1 sm:h-auto sm:w-auto sm:p-2 hidden sm:flex"
               >
                 <ZoomIn className="w-4 h-4" />
               </Button>
@@ -144,19 +144,19 @@ export default function ImagePreviewModal({ isOpen, onClose, images, initialInde
                 variant="ghost"
                 size="sm"
                 onClick={handleDownload}
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 h-10 w-10 p-2 sm:h-auto sm:w-auto"
                 title="İndir"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-4 h-4 sm:w-4 sm:h-4" />
               </Button>
               
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 h-10 w-10 p-2 sm:h-auto sm:w-auto"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5 sm:w-4 sm:h-4" />
               </Button>
             </div>
           </div>
