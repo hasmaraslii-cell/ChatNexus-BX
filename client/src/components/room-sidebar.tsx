@@ -47,8 +47,7 @@ export default function RoomSidebar({
   const getDMDisplayName = (room: Room) => {
     if (!room.participants || room.participants.length < 2) return room.name;
     
-    // Get the other user's name
-    const otherUserId = room.participants.find(id => id !== currentUser.id);
+    // Show only the other person's name, not current user's name
     const otherUserName = room.name.split(', ').find(name => name !== currentUser.username);
     return otherUserName || "DM";
   };
