@@ -106,7 +106,7 @@ export default function ProfileEditModal({ user, isOpen, onClose, onProfileUpdat
     }
 
     const result = await response.json();
-    return result.path;
+    return Array.isArray(result) ? result[0].path : result.path;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

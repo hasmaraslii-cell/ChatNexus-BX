@@ -179,7 +179,7 @@ export class MemStorage implements IStorage {
     const deleted = this.users.delete(id);
     if (deleted) {
       // Also delete all messages from this user
-      for (const [messageId, message] of this.messages.entries()) {
+      for (const [messageId, message] of Array.from(this.messages.entries())) {
         if (message.userId === id) {
           this.messages.delete(messageId);
         }
@@ -243,7 +243,7 @@ export class MemStorage implements IStorage {
     const deleted = this.rooms.delete(id);
     if (deleted) {
       // Also delete all messages in this room
-      for (const [messageId, message] of this.messages.entries()) {
+      for (const [messageId, message] of Array.from(this.messages.entries())) {
         if (message.roomId === id) {
           this.messages.delete(messageId);
         }
@@ -271,9 +271,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       editedAt: null,
       replyToId: insertMessage.replyToId || null,
-      pollQuestion: insertMessage.pollQuestion || null,
-      pollOptions: insertMessage.pollOptions || null,
-      pollVotes: insertMessage.pollVotes || null,
+
       fileGroupId: insertMessage.fileGroupId || null,
       groupIndex: insertMessage.groupIndex || null,
     };
@@ -350,25 +348,7 @@ export class MemStorage implements IStorage {
     return messagesWithUsers;
   }
 
-  async deleteRoom(id: string): Promise<boolean> {
-    const room = this.rooms.get(id);
-    if (!room) {
-      return false;
-    }
-    
-    // Delete all messages in the room
-    const messagesToDelete = Array.from(this.messages.entries())
-      .filter(([_, message]) => message.roomId === id)
-      .map(([messageId, _]) => messageId);
-    
-    messagesToDelete.forEach(messageId => {
-      this.messages.delete(messageId);
-    });
-    
-    // Delete the room
-    this.rooms.delete(id);
-    return true;
-  }
+
 
   // Typing indicators
   async setTyping(userId: string, roomId: string, username: string): Promise<void> {

@@ -168,6 +168,14 @@ export default function Chat() {
   };
 
   const handleLogout = () => {
+    if (currentUser) {
+      // Update user status to offline before logging out
+      fetch(`/api/users/${currentUser.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'offline' })
+      }).catch(console.error);
+    }
     localStorage.removeItem("ibx-user");
     setCurrentUser(null);
     setCurrentRoom(null);
