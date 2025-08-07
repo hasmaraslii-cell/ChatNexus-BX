@@ -326,7 +326,7 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
   return (
     <div 
       ref={messageRef}
-      className="message-group flex items-start space-x-3 p-2 rounded-lg transition-all duration-200 group hover:bg-[var(--discord-dark)]/40"
+      className="message-group flex items-start space-x-3 p-2 rounded-lg transition-all duration-200 group hover:bg-gray-100 dark:hover:bg-[var(--discord-dark)]/40"
       style={{ transform: `translateX(${swipeDistance}px)` }}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
@@ -634,7 +634,7 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleCopyMessage}
-              className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)] rounded-md px-3 py-2 cursor-pointer transition-colors flex items-center"
+              className="text-[var(--discord-light)] hover:bg-gray-200 dark:hover:bg-[var(--discord-dark)] rounded-md px-3 py-2 cursor-pointer transition-colors flex items-center"
             >
               <Copy className="w-4 h-4 mr-3" />
               <span className="font-medium">Kopyala</span>
@@ -642,7 +642,7 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
             {message.userId === currentUser?.id && (
               <DropdownMenuItem
                 onClick={handleEdit}
-                className="text-[var(--discord-light)] hover:bg-[var(--discord-dark)] rounded-md px-3 py-2 cursor-pointer transition-colors flex items-center"
+                className="text-[var(--discord-light)] hover:bg-gray-200 dark:hover:bg-[var(--discord-dark)] rounded-md px-3 py-2 cursor-pointer transition-colors flex items-center"
               >
                 <Edit className="w-4 h-4 mr-3" />
                 <span className="font-medium">Düzenle</span>
