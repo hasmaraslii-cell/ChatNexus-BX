@@ -94,7 +94,7 @@ export default function ProfileEditModal({ user, isOpen, onClose, onProfileUpdat
 
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('files', file); // Changed from 'file' to 'files'
 
     const response = await fetch('/api/upload', {
       method: 'POST',

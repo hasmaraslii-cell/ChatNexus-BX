@@ -42,7 +42,7 @@ export default function UserRegistrationModal({ onUserCreated }: UserRegistratio
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('files', file); // Changed from 'file' to 'files'
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
@@ -80,7 +80,7 @@ export default function UserRegistrationModal({ onUserCreated }: UserRegistratio
     if (profileImage) {
       try {
         const uploadResult = await uploadImageMutation.mutateAsync(profileImage);
-        profileImageUrl = uploadResult.path;
+        profileImageUrl = Array.isArray(uploadResult) ? uploadResult[0].path : uploadResult.path;
       } catch (error) {
         toast({
           title: "Hata",
@@ -99,12 +99,12 @@ export default function UserRegistrationModal({ onUserCreated }: UserRegistratio
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-[var(--discord-darker)] p-8 rounded-xl shadow-2xl w-full max-w-md mx-4">
+      <div className="bg-[var(--discord-darker)] p-8 rounded-xl shadow-2xl w-full max-w-md mx-4" role="dialog" aria-describedby="registration-description">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-gradient-primary mb-2">
             IBX'e Hoş Geldin!
           </h1>
-          <p className="text-[var(--discord-light)]/80">
+          <p id="registration-description" className="text-[var(--discord-light)]/80">
             Sohbete katılmak için profil bilgilerini gir
           </p>
         </div>
