@@ -30,6 +30,7 @@ export interface IStorage {
   getMessage(id: string): Promise<Message | undefined>;
   createMessage(message: InsertMessage): Promise<Message>;
   updateMessage(id: string, content: string): Promise<Message | undefined>;
+  updateMessagePollVotes(id: string, pollVotes: Record<number, number>): Promise<Message | undefined>;
   deleteMessage(id: string): Promise<boolean>;
   getMessagesByRoom(roomId: string, limit?: number): Promise<MessageWithUser[]>;
   getAllMessages(): Promise<MessageWithUser[]>;
@@ -291,6 +292,16 @@ export class MemStorage implements IStorage {
     const message = this.messages.get(id);
     if (message) {
       const updatedMessage = { ...message, content, editedAt: new Date() };
+      this.messages.set(id, updatedMessage);
+      return updatedMessage;
+    }
+    return undefined;
+  }
+
+  async updateMessagePollVotes(id: string, pollVotes: Record<number, number>): Promise<Message | undefined> {
+    const message = this.messages.get(id);
+    if (message) {
+      const updatedMessage = { ...message, pollVotes };
       this.messages.set(id, updatedMessage);
       return updatedMessage;
     }

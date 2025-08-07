@@ -467,20 +467,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Anket mesajı bulunamadı" });
       }
       
-      // Initialize poll votes if not exists
-      if (!message.pollVotes) {
-        message.pollVotes = {};
-      }
+      // Get current poll votes or initialize as empty object
+      const currentVotes: Record<number, number> = message.pollVotes || {};
+      
+      // Create a new votes object to ensure immutability
+      const newVotes: Record<number, number> = { ...currentVotes };
       
       // Initialize vote count for this option if not exists
-      if (!message.pollVotes[optionIndex]) {
-        message.pollVotes[optionIndex] = 0;
+      if (!newVotes[optionIndex]) {
+        newVotes[optionIndex] = 0;
       }
       
       // Increment vote count
-      message.pollVotes[optionIndex]++;
+      newVotes[optionIndex] = (newVotes[optionIndex] || 0) + 1;
       
-      res.json({ success: true, votes: message.pollVotes });
+      // Update message with new poll votes
+      const updatedMessage = await storage.updateMessagePollVotes(id, newVotes);
+      
+      if (!updatedMessage) {
+        return res.status(500).json({ error: "Oy güncellenemedi" });
+      }
+      
+      res.json({ success: true, votes: newVotes });
     } catch (error) {
       console.error("Error voting in poll:", error);
       res.status(500).json({ error: "Oy verilemedi" });

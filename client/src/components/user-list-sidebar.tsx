@@ -152,15 +152,7 @@ export default function UserListSidebar({
         </h3>
       </div>
 
-      <div 
-        className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-4"
-        style={{ 
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehavior: 'contain',
-          scrollbarWidth: 'thin',
-          scrollbarColor: 'var(--discord-light) transparent'
-        }}
-      >
+      <div className="flex-1 overflow-y-auto mobile-scroll-area p-3 space-y-4">
         {/* Online Users Section */}
         <div>
           <Button
