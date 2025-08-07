@@ -415,7 +415,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="flex items-end p-3 space-x-2">
+            <form onSubmit={handleSubmit} className="flex items-end p-3 space-x-3">
               <Button
                 type="button"
                 variant="ghost"
@@ -441,12 +441,10 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
                   data-testid="textarea-message-input"
                 />
               </div>
-              
-
 
               <Button
                 type="submit"
-                className="bg-[var(--discord-blurple)] hover:bg-[var(--discord-blurple)]/80 text-white p-2 shrink-0"
+                className="bg-[var(--discord-blurple)] hover:bg-[var(--discord-blurple)]/80 text-white p-2 shrink-0 flex items-center justify-center"
                 title="Gönder"
                 disabled={!message.trim() || sendMessageMutation.isPending}
                 data-testid="button-send-message"
