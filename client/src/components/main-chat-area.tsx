@@ -288,21 +288,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
 
   return (
     <div className="flex flex-col h-full bg-[var(--discord-dark)] relative">
-      {/* Fixed Chat Header */}
-      <div className="flex-shrink-0 h-16 border-b border-[var(--discord-darker)] flex items-center justify-between px-4 md:px-6 bg-[var(--discord-dark)] shadow-sm">
-        <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
-          <Hash className="text-[var(--discord-light)]/50 w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-          <h3 className="font-semibold text-[var(--discord-light)] truncate text-sm md:text-base">
-            {currentRoom.name}
-          </h3>
-          <span className="text-[var(--discord-light)]/50 text-xs md:text-sm hidden md:inline">|</span>
-          <span className="text-[var(--discord-light)]/70 text-xs md:text-sm truncate hidden md:inline">
-            {currentRoom.description}
-          </span>
-        </div>
-        
 
-      </div>
 
       {/* Messages Area - Fixed height with proper scrolling */}
       <div 
@@ -449,7 +435,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
                   onChange={handleMessageChange}
                   onKeyDown={handleKeyDown}
                   className="w-full bg-transparent text-[var(--discord-light)] placeholder:text-[var(--discord-light)]/50 resize-none border-none focus:ring-0 focus:outline-none min-h-0 p-0 text-sm md:text-base"
-                  placeholder={replyToMessage ? `${replyToMessage.user.username} kullanıcısına yanıt ver...` : `#${currentRoom.name} kanalına mesaj gönder`}
+                  placeholder={replyToMessage ? `${replyToMessage.user.username} kullanıcısına yanıt ver...` : (currentRoom.isDM ? `@${currentRoom.name} kişisine mesaj gönder` : `#${currentRoom.name} kanalına mesaj gönder`)}
                   rows={1}
                   disabled={sendMessageMutation.isPending}
                   data-testid="textarea-message-input"

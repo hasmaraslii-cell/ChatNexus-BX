@@ -50,6 +50,8 @@ export const insertRoomSchema = createInsertSchema(rooms).omit({
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   createdAt: true,
+}).extend({
+  content: z.string().max(1000).optional(), // Increased to 1000 characters
 });
 
 // Types

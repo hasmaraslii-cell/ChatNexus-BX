@@ -10,7 +10,10 @@ Preferred communication style: Simple, everyday language.
 Recent Customizations (Aug 2025):
 - Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
 - File upload limits: 50MB max, up to 20 files simultaneously
-- Simplified UI: Removed admin panel and attachment menus from header
+- WhatsApp-style grouped file uploads to prevent spam
+- Simplified UI: Removed admin panel, attachment menus, and redundant secondary header
+- Message character limit increased to 1000 characters
+- Discord-style channel naming with # prefix and DM distinction with @
 - New channel structure with emoji-based naming
 - Custom logo integration: https://i.imgur.com/DvliwXN.png
 - Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
