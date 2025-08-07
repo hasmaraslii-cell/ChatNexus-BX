@@ -27,17 +27,13 @@ export const messages = pgTable("messages", {
   roomId: varchar("room_id").notNull(),
   userId: varchar("user_id").notNull(),
   content: text("content"),
-  messageType: text("message_type").notNull().default("text"), // text, image, video, file, system, poll
+  messageType: text("message_type").notNull().default("text"), // text, image, video, file, system
   fileName: text("file_name"),
   filePath: text("file_path"),
   fileSize: integer("file_size"),
   createdAt: timestamp("created_at").defaultNow(),
   editedAt: timestamp("edited_at"),
   replyToId: varchar("reply_to_id"),
-  // Poll data
-  pollQuestion: text("poll_question"),
-  pollOptions: text("poll_options").array(),
-  pollVotes: text("poll_votes"), // JSON string of votes
   // File group data for multiple file uploads
   fileGroupId: varchar("file_group_id"),
   groupIndex: integer("group_index"),

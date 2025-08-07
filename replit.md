@@ -8,6 +8,12 @@ IBX is a real-time chat application built with a modern full-stack architecture.
 
 Preferred communication style: Simple, everyday language.
 Recent Customizations (Aug 2025):
+- **COMPLETED**: Migration from Replit Agent to standard Replit environment
+- **COMPLETED**: Removed all voting/polling functionality from the application
+- **COMPLETED**: Implemented image preview modal with zoom, navigation, and download
+- **COMPLETED**: Enhanced file upload system with grouped display in single messages
+- **COMPLETED**: Made user list sidebar scrollable with proper mobile support
+- **COMPLETED**: Database schema updates and migrations applied successfully
 - Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
 - File upload limits: 50MB max, up to 20 files simultaneously
 - WhatsApp-style grouped file uploads to prevent spam
@@ -16,11 +22,6 @@ Recent Customizations (Aug 2025):
 - Discord-style channel naming with # prefix and DM distinction with @
 - Updated channel structure: 💬｜sohbet, 😂｜mizah, 🎮｜oyunlar, 🎵｜müzik, 🖼️｜medya, 🎬｜filmler
 - DM display shows only the other person's name, not current user
-- Custom logo integration: https://i.imgur.com/DvliwXN.png
-- Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
-- File upload limits: 50MB max, up to 20 files simultaneously
-- Simplified UI: Removed admin panel and attachment menus from header
-- New channel structure with emoji-based naming
 - Custom logo integration: https://i.imgur.com/DvliwXN.png
 
 ## System Architecture

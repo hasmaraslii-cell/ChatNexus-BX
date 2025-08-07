@@ -4,10 +4,10 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Hash, Paperclip, Search, Bell, Plus, Smile, Send, X, Mic, MicOff, Reply, BarChart3 } from "lucide-react";
+import { Hash, Paperclip, Search, Bell, Plus, Smile, Send, X, Mic, MicOff, Reply } from "lucide-react";
 import MessageItem from "@/components/message-item";
 import FileUploadArea from "@/components/file-upload-area";
-import PollCreationModal from "@/components/poll-creation-modal";
+
 import type { Room, User, MessageWithUser, TypingIndicator } from "@shared/schema";
 
 interface MainChatAreaProps {
@@ -21,7 +21,7 @@ interface MainChatAreaProps {
 export default function MainChatArea({ currentRoom, currentUser, replyToMessage, onClearReply, onReply }: MainChatAreaProps) {
   const [message, setMessage] = useState("");
   const [showFileUpload, setShowFileUpload] = useState(false);
-  const [showPollModal, setShowPollModal] = useState(false);
+
   const [isTyping, setIsTyping] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -445,17 +445,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
                 <Plus className="w-5 h-5" />
               </Button>
               
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0"
-                title="Oylama Oluştur"
-                onClick={() => setShowPollModal(true)}
-                data-testid="button-create-poll"
-              >
-                <BarChart3 className="w-5 h-5" />
-              </Button>
+
               
               <div className="flex-1 min-w-0">
                 <Textarea
@@ -490,13 +480,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
         </div>
       </div>
 
-      {/* Poll Creation Modal */}
-      <PollCreationModal
-        isOpen={showPollModal}
-        onClose={() => setShowPollModal(false)}
-        currentUser={currentUser}
-        currentRoom={currentRoom}
-      />
+
     </div>
   );
 }

@@ -456,44 +456,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Poll voting endpoint
-  app.post("/api/messages/:id/vote", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { optionIndex, userId } = req.body;
-      
-      const message = await storage.getMessage(id);
-      if (!message || message.messageType !== "poll") {
-        return res.status(404).json({ error: "Anket mesajı bulunamadı" });
-      }
-      
-      // Get current poll votes or initialize as empty object
-      const currentVotes: Record<number, number> = message.pollVotes || {};
-      
-      // Create a new votes object to ensure immutability
-      const newVotes: Record<number, number> = { ...currentVotes };
-      
-      // Initialize vote count for this option if not exists
-      if (!newVotes[optionIndex]) {
-        newVotes[optionIndex] = 0;
-      }
-      
-      // Increment vote count
-      newVotes[optionIndex] = (newVotes[optionIndex] || 0) + 1;
-      
-      // Update message with new poll votes
-      const updatedMessage = await storage.updateMessagePollVotes(id, newVotes);
-      
-      if (!updatedMessage) {
-        return res.status(500).json({ error: "Oy güncellenemedi" });
-      }
-      
-      res.json({ success: true, votes: newVotes });
-    } catch (error) {
-      console.error("Error voting in poll:", error);
-      res.status(500).json({ error: "Oy verilemedi" });
-    }
-  });
+
+
 
   // DM routes
   app.post("/api/dm/create", async (req, res) => {

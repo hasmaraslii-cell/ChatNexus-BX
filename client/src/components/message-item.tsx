@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Copy, Reply, Download, User, Edit, Trash2, MoreHorizontal, Mic } from "lucide-react";
+import { Copy, Reply, Download, User, Edit, Trash2, MoreHorizontal, Mic, Eye } from "lucide-react";
+import ImagePreviewModal from "@/components/image-preview-modal";
 // Components removed - implementing features directly
 import type { MessageWithUser, User as UserType } from "@shared/schema";
 
@@ -23,6 +24,7 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
   const [swipeDistance, setSwipeDistance] = useState(0);
   const [startX, setStartX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [showImagePreview, setShowImagePreview] = useState(false);
   const touchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messageRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -433,11 +435,16 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
         {/* Image Content */}
         {message.messageType === "image" && message.filePath && (
           <div className="bg-[var(--discord-darker)] rounded-lg p-2 max-w-md mb-3">
-            <img 
-              src={message.filePath} 
-              alt={message.fileName || "Image"}
-              className="rounded-lg w-full h-auto max-h-96 object-contain"
-            />
+            <div className="relative group cursor-pointer" onClick={() => setShowImagePreview(true)}>
+              <img 
+                src={message.filePath} 
+                alt={message.fileName || "Image"}
+                className="rounded-lg w-full h-auto max-h-96 object-contain transition-opacity duration-200 group-hover:opacity-80"
+              />
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/50 rounded-lg">
+                <Eye className="w-8 h-8 text-white" />
+              </div>
+            </div>
             <div className="flex items-center justify-between mt-2 text-sm text-[var(--discord-light)]/70">
               <span>{message.fileName}</span>
               <Button
@@ -490,43 +497,7 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
         )}
         
         {/* Voice Message - Discord Style */}
-        {/* Poll Message */}
-        {message.messageType === "poll" && message.pollQuestion && message.pollOptions && (
-          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-4 max-w-md mb-3 shadow-sm">
-            <h4 className="font-semibold text-[var(--discord-light)] mb-3">{message.pollQuestion}</h4>
-            <div className="space-y-2">
-              {message.pollOptions.map((option: string, index: number) => {
-                const votes = message.pollVotes ? (message.pollVotes[index] || 0) : 0;
-                const totalVotes = message.pollVotes ? Object.values(message.pollVotes).reduce((a: number, b: number) => Number(a) + Number(b), 0) : 0;
-                const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
-                
-                return (
-                  <button
-                    key={index}
-                    className="w-full text-left p-2 rounded bg-[var(--discord-darker)]/50 hover:bg-[var(--discord-darker)] transition-colors border border-[var(--discord-dark)]"
-                    onClick={() => handlePollVote(index)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="text-[var(--discord-light)]">{option}</span>
-                      <span className="text-[var(--discord-light)]/70 text-sm">
-                        {percentage}% ({votes})
-                      </span>
-                    </div>
-                    <div className="mt-1 bg-[var(--discord-dark)] rounded-full h-1 overflow-hidden">
-                      <div 
-                        className="bg-blue-500 h-full transition-all duration-300"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-2 text-xs text-[var(--discord-light)]/50">
-              Toplam oy: {message.pollVotes ? Object.values(message.pollVotes).reduce((a: number, b: number) => Number(a) + Number(b), 0) : 0}
-            </div>
-          </div>
-        )}
+
         
         {/* File Group Display for multiple files */}
         {message.fileGroupId && allMessages && (() => {
@@ -684,6 +655,21 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      
+      {/* Image Preview Modal */}
+      {showImagePreview && message.messageType === "image" && message.filePath && (
+        <ImagePreviewModal
+          isOpen={showImagePreview}
+          onClose={() => setShowImagePreview(false)}
+          images={[{
+            src: message.filePath,
+            alt: message.fileName || "Image",
+            fileName: message.fileName || undefined,
+            filePath: message.filePath || undefined,
+          }]}
+          initialIndex={0}
+        />
+      )}
     </div>
   );
 }

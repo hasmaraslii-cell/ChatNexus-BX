@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Image, Video, File, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, Image, Video, File, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import ImagePreviewModal from "@/components/image-preview-modal";
 import type { MessageWithUser } from "@shared/schema";
 
 interface FileGroupDisplayProps {
@@ -10,6 +11,13 @@ interface FileGroupDisplayProps {
 
 export default function FileGroupDisplay({ messages, fileGroupId }: FileGroupDisplayProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [previewImages, setPreviewImages] = useState<Array<{
+    src: string;
+    alt: string;
+    fileName?: string;
+    filePath?: string;
+  }>>([]);
   
   const groupMessages = messages
     .filter(msg => msg.fileGroupId === fileGroupId)
@@ -57,6 +65,21 @@ export default function FileGroupDisplay({ messages, fileGroupId }: FileGroupDis
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
   };
 
+  const handleImageClick = (message: MessageWithUser, index: number) => {
+    const imageMessages = groupMessages.filter(msg => msg.messageType === "image");
+    const images = imageMessages.map(msg => ({
+      src: `/api/files/${msg.filePath}`,
+      alt: msg.fileName || "Image",
+      fileName: msg.fileName || undefined,
+      filePath: msg.filePath || undefined,
+    }));
+    
+    const clickedImageIndex = imageMessages.findIndex(msg => msg.id === message.id);
+    setPreviewImages(images);
+    setCurrentIndex(clickedImageIndex >= 0 ? clickedImageIndex : 0);
+    setShowImagePreview(true);
+  };
+
   return (
     <div className="bg-[var(--discord-darker)] rounded-lg overflow-hidden mt-2 max-w-md">
       {/* File grid header */}
@@ -75,11 +98,16 @@ export default function FileGroupDisplay({ messages, fileGroupId }: FileGroupDis
       {/* Main file display */}
       <div className="relative">
         {currentMessage.messageType === "image" && currentMessage.filePath && (
-          <img
-            src={`/api/files/${currentMessage.filePath}`}
-            alt={currentMessage.fileName || "Image"}
-            className="w-full h-48 object-cover"
-          />
+          <div className="relative group cursor-pointer" onClick={() => handleImageClick(currentMessage, currentIndex)}>
+            <img
+              src={`/api/files/${currentMessage.filePath}`}
+              alt={currentMessage.fileName || "Image"}
+              className="w-full h-48 object-cover transition-opacity duration-200 group-hover:opacity-80"
+            />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/50">
+              <Eye className="w-8 h-8 text-white" />
+            </div>
+          </div>
         )}
         
         {currentMessage.messageType === "video" && currentMessage.filePath && (
@@ -180,6 +208,14 @@ export default function FileGroupDisplay({ messages, fileGroupId }: FileGroupDis
           </div>
         )}
       </div>
+      
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        isOpen={showImagePreview}
+        onClose={() => setShowImagePreview(false)}
+        images={previewImages}
+        initialIndex={currentIndex}
+      />
     </div>
   );
 }
