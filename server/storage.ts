@@ -60,10 +60,18 @@ export class MemStorage implements IStorage {
 
   private async initializeDefaultRooms() {
     const defaultRooms = [
-      { name: "genel-sohbet", description: "Herkesin konuşabileceği genel alan" },
-      { name: "random", description: "Rastgele konuşmalar için" },
-      { name: "oyun", description: "Oyun konuşmaları" },
-      { name: "müzik", description: "Müzik paylaşımları" },
+      { name: "💬｜sohbet", description: "Genel sohbet kanalı" },
+      { name: "😂｜mizah", description: "Komik içerikler ve şakalar" },
+      { name: "🎮｜oyunlar", description: "Oyun tartışmaları" },
+      { name: "🎵｜müzik", description: "Müzik paylaşımları ve tartışmaları" },
+      { name: "🎨｜yaratıcılık", description: "Sanatsal içerikler ve yaratıcı projeler" },
+      { name: "📱｜mobil", description: "Mobil teknolojiler ve uygulamalar" },
+      { name: "📂｜medya", description: "Video, resim ve medya paylaşımları" },
+      { name: "📚｜kitaplar", description: "Kitap önerileri ve tartışmaları" },
+      { name: "🎬｜filmler", description: "Film ve dizi konuşmaları" },
+      { name: "🧠｜tartışma", description: "Derinlemesine tartışmalar" },
+      { name: "🎉｜etkinlikler", description: "Etkinlik duyuruları ve organizasyonlar" },
+      { name: "🛠️｜yardım", description: "Yardım ve destek kanalı" },
     ];
 
     for (const roomData of defaultRooms) {

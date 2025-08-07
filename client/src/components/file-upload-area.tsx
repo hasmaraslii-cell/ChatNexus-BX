@@ -62,22 +62,26 @@ export default function FileUploadArea({ onFileUpload }: FileUploadAreaProps) {
     
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
-      handleFileUpload(files[0]);
+      // Support multiple files up to 20
+      const fileArray = files.slice(0, 20);
+      fileArray.forEach(file => handleFileUpload(file));
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      handleFileUpload(files[0]);
+      // Support multiple files up to 20
+      const fileArray = Array.from(files).slice(0, 20);
+      fileArray.forEach(file => handleFileUpload(file));
     }
   };
 
   const handleFileUpload = (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 50 * 1024 * 1024) {
       toast({
         title: "Hata",
-        description: "Dosya boyutu 10MB'dan büyük olamaz",
+        description: "Dosya boyutu 50MB'dan büyük olamaz",
         variant: "destructive",
       });
       return;
@@ -108,6 +112,7 @@ export default function FileUploadArea({ onFileUpload }: FileUploadAreaProps) {
           onChange={handleFileSelect}
           className="hidden"
           accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip,.rar"
+          multiple
           disabled={uploadMutation.isPending}
         />
         
@@ -133,7 +138,7 @@ export default function FileUploadArea({ onFileUpload }: FileUploadAreaProps) {
                 </Button>
               </p>
               <p className="text-xs text-[var(--discord-light)]/50">
-                Maksimum 10MB - Resim, video, doküman desteklenir
+                Maksimum 50MB, 20 dosyaya kadar - Resim, video, doküman desteklenir
               </p>
             </>
           )}

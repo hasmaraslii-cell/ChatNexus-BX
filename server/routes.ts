@@ -11,7 +11,8 @@ import { z } from "zod";
 const upload = multer({
   dest: 'uploads/',
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+    files: 20, // Allow up to 20 files at once
   },
   fileFilter: (req, file, cb) => {
     // Allow images, videos, documents, archives, and audio files
@@ -74,23 +75,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
       
-      // Find the general room and send welcome message
-      try {
-        const rooms = await storage.getAllRooms();
-        const generalRoom = rooms.find(room => room.name.toLowerCase().includes('genel') || room.name.toLowerCase().includes('general'));
-        
-        if (generalRoom) {
-          const systemMessage = {
-            roomId: generalRoom.id,
-            userId: user.id,
-            content: randomMessage,
-            type: 'system' as const
-          };
-          await storage.createMessage(systemMessage);
-        }
-      } catch (error) {
-        console.error('Welcome message could not be sent:', error);
-      }
+      // Don't send welcome message for DM creation or general room
+      // Users will be welcomed naturally in chat
       
       res.json(user);
     } catch (error) {

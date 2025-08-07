@@ -13,12 +13,16 @@
   --card-foreground: hsl(20, 14.3%, 4.1%);
   --border: hsl(20, 5.9%, 90%);
   --input: hsl(20, 5.9%, 90%);
-  --primary: hsl(231, 81%, 67%);
+  --primary: linear-gradient(135deg, #c6dfff, #f7c6e9);
   --primary-foreground: hsl(211, 100%, 99%);
   --secondary: hsl(60, 4.8%, 95.9%);
   --secondary-foreground: hsl(24, 9.8%, 10%);
   --accent: hsl(60, 4.8%, 95.9%);
   --accent-foreground: hsl(24, 9.8%, 10%);
+  
+  /* Custom gradient colors */
+  --gradient-start: #c6dfff;
+  --gradient-end: #f7c6e9;
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(60, 9.1%, 97.8%);
   --ring: hsl(20, 14.3%, 4.1%);
@@ -45,8 +49,12 @@
   --card-foreground: hsl(210, 9%, 87%);
   --border: hsl(220, 7%, 23%);
   --input: hsl(220, 7%, 23%);
-  --primary: hsl(235, 86%, 65%);
+  --primary: linear-gradient(135deg, #c6dfff, #f7c6e9);
   --primary-foreground: hsl(211, 100%, 99%);
+  
+  /* Custom gradient colors for dark mode */
+  --gradient-start: #c6dfff;
+  --gradient-end: #f7c6e9;
   --secondary: hsl(223, 7%, 20%);
   --secondary-foreground: hsl(210, 9%, 87%);
   --accent: hsl(223, 7%, 20%);
@@ -101,6 +109,24 @@
 .animate-bounce-delay-2 {
   animation: bounce 2s infinite;
   animation-delay: 0.4s;
+}
+
+/* Gradient utilities */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+}
+
+.text-gradient-primary {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.border-gradient-primary {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  border: 1px solid transparent;
+  background-clip: padding-box;
 }
 
 /* Message hover effects */

@@ -101,7 +101,7 @@ export default function UserRegistrationModal({ onUserCreated }: UserRegistratio
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-[var(--discord-darker)] p-8 rounded-xl shadow-2xl w-full max-w-md mx-4">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-[var(--discord-blurple)] mb-2">
+          <h1 className="text-3xl font-bold text-gradient-primary mb-2">
             IBX'e Hoş Geldin!
           </h1>
           <p className="text-[var(--discord-light)]/80">
@@ -148,7 +148,7 @@ export default function UserRegistrationModal({ onUserCreated }: UserRegistratio
                 <Button
                   type="button"
                   onClick={() => document.getElementById('profileImage')?.click()}
-                  className="bg-[var(--discord-blurple)] hover:bg-[var(--discord-blurple)]/80"
+                  className="bg-gradient-primary hover:opacity-80"
                   disabled={createUserMutation.isPending}
                 >
                   <Camera className="w-4 h-4 mr-2" />
@@ -160,7 +160,7 @@ export default function UserRegistrationModal({ onUserCreated }: UserRegistratio
           
           <Button
             type="submit"
-            className="w-full bg-[var(--discord-green)] hover:bg-[var(--discord-green)]/80 text-white font-semibold"
+            className="w-full bg-gradient-primary hover:opacity-80 text-white font-semibold"
             disabled={createUserMutation.isPending || uploadImageMutation.isPending}
           >
             {createUserMutation.isPending || uploadImageMutation.isPending ? (

@@ -2,11 +2,17 @@
 
 ## Overview
 
-IBX is a real-time chat application built with a modern full-stack architecture. The application provides Discord-like functionality with multiple chat rooms, file sharing capabilities, user presence indicators, and a responsive design. Users can register with usernames and profile images, join different themed chat rooms, send text messages and files, and see who's currently online. The first registered user becomes the admin with full channel management capabilities including creating and deleting channels through an integrated admin panel.
+IBX is a real-time chat application built with a modern full-stack architecture. The application provides Discord-like functionality with multiple themed chat rooms, file sharing capabilities, user presence indicators, and a responsive design with custom gradient branding. Users can register with usernames and profile images, join different themed chat rooms, send text messages and files (up to 20 files at once, 50MB each), and see who's currently online. The application features a pastel blue-to-pink gradient design theme and streamlined interface without admin management controls.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Recent Customizations (Aug 2025):
+- Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
+- File upload limits: 50MB max, up to 20 files simultaneously
+- Simplified UI: Removed admin panel and attachment menus from header
+- New channel structure with emoji-based naming
+- Custom logo integration: https://i.imgur.com/DvliwXN.png
 
 ## System Architecture
 
@@ -16,7 +22,7 @@ Preferred communication style: Simple, everyday language.
 - **State Management**: TanStack Query (React Query) for server state management and caching
 - **Routing**: Wouter for lightweight client-side routing
 - **UI Components**: Radix UI primitives through shadcn/ui for accessible, customizable components
-- **Design Theme**: Discord-inspired dark theme with custom CSS variables for colors
+- **Design Theme**: Discord-inspired dark theme with custom pastel gradient colors (#c6dfff to #f7c6e9)
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js server
@@ -52,7 +58,7 @@ Preferred communication style: Simple, everyday language.
 
 ### File Upload System
 - **Supported Types**: Images, videos, documents, and archives with MIME type validation
-- **Size Limits**: 10MB maximum file size per upload
+- **Size Limits**: 50MB maximum file size per upload, up to 20 files simultaneously
 - **Storage**: Server-side file storage with unique naming to prevent conflicts
 - **Download**: Secure file serving with proper content headers
 

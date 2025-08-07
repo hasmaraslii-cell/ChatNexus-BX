@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import AdminPanel from "@/components/admin-panel";
+
 import { useQuery } from "@tanstack/react-query";
 import type { Room, User as UserType } from "@shared/schema";
 
@@ -56,32 +56,8 @@ export default function RoomSidebar({
   return (
     <div className="w-72 bg-[var(--discord-darker)] flex flex-col border-r border-[var(--discord-dark)]">
       <div className="p-4 border-b border-[var(--discord-dark)]">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-[var(--discord-blurple)]">IBX</h2>
-          {currentUser.isAdmin && (
-            <div className="flex items-center space-x-1">
-              <span className="text-xs text-[var(--discord-yellow)]">👑</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const groupName = prompt("Yeni grup adını girin:");
-                  if (groupName && groupName.trim()) {
-                    fetch('/api/rooms', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ name: groupName.trim() })
-                    }).then(() => window.location.reload());
-                  }
-                }}
-                className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)]"
-                title="Yeni Grup Oluştur"
-                data-testid="button-create-group"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
+        <div className="flex items-center justify-center">
+          <img src="https://i.imgur.com/DvliwXN.png" alt="Logo" className="h-8 w-auto" />
         </div>
       </div>
       
@@ -143,7 +119,7 @@ export default function RoomSidebar({
           
           {showDMs && dmRooms && Array.isArray(dmRooms) && (
             <div className="space-y-1">
-              {(dmRooms as Room[]).map((room: Room) => {
+              {dmRooms.map((room: Room) => {
                 const messageCount = getMessageCount(room);
                 const isActive = currentRoom.id === room.id;
                 
@@ -183,8 +159,7 @@ export default function RoomSidebar({
         </div>
       </div>
       
-      {/* Admin Panel */}
-      <AdminPanel currentUser={currentUser} rooms={rooms} />
+      {/* Admin Panel removed as requested */}
       
       {/* User Info */}
       <div className="p-3 border-t border-[var(--discord-dark)]">

@@ -301,36 +301,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
           </span>
         </div>
         
-        <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-darker)] p-2"
-            title="Dosya Paylaş"
-            onClick={() => setShowFileUpload(!showFileUpload)}
-            data-testid="button-file-upload"
-          >
-            <Paperclip className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-darker)] p-2 hidden md:flex"
-            title="Arama"
-            data-testid="button-search"
-          >
-            <Search className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-darker)] p-2 hidden md:flex"
-            title="Bildirimler"
-            data-testid="button-notifications"
-          >
-            <Bell className="w-4 h-4" />
-          </Button>
-        </div>
+
       </div>
 
       {/* Messages Area - Fixed height with proper scrolling */}
