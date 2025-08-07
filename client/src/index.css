@@ -28,12 +28,12 @@
   --ring: hsl(20, 14.3%, 4.1%);
   --radius: 0.5rem;
   
-  /* Discord-like colors */
+  /* Discord-like colors for light theme */
   --discord-blurple: hsl(235, 86%, 65%);
-  --discord-dark: hsl(220, 7%, 23%);
-  --discord-darker: hsl(223, 7%, 20%);
-  --discord-darkest: hsl(220, 8%, 13%);
-  --discord-light: hsl(210, 9%, 87%);
+  --discord-dark: hsl(0, 0%, 100%);
+  --discord-darker: hsl(60, 4.8%, 95.9%);
+  --discord-light: hsl(20, 14.3%, 4.1%);
+  --discord-medium: hsl(25, 5.3%, 44.7%);
   --discord-green: hsl(139, 100%, 41%);
   --discord-yellow: hsl(38, 96%, 54%);
 }
@@ -48,6 +48,12 @@
   --card: hsl(223, 7%, 20%);
   --card-foreground: hsl(210, 9%, 87%);
   --border: hsl(220, 7%, 23%);
+  
+  /* Discord-like colors for dark theme */
+  --discord-dark: hsl(220, 7%, 23%);
+  --discord-darker: hsl(223, 7%, 20%);
+  --discord-light: hsl(210, 9%, 87%);
+  --discord-medium: hsl(210, 5%, 65%);
   --input: hsl(220, 7%, 23%);
   --primary: linear-gradient(135deg, #c6dfff, #f7c6e9);
   --primary-foreground: hsl(211, 100%, 99%);

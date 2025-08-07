@@ -122,7 +122,7 @@ export default function RoomSidebar({
           
           {showDMs && dmRooms && Array.isArray(dmRooms) && (
             <div className="space-y-1">
-              {dmRooms.map((room: Room) => {
+              {(dmRooms as Room[]).map((room: Room) => {
                 const messageCount = getMessageCount(room);
                 const isActive = currentRoom.id === room.id;
                 
@@ -152,7 +152,7 @@ export default function RoomSidebar({
                   </div>
                 );
               })}
-              {(!dmRooms || dmRooms.length === 0) && (
+              {(!dmRooms || (dmRooms as Room[]).length === 0) && (
                 <p className="text-xs text-[var(--discord-light)]/50 px-2 py-1">
                   Henüz özel mesajınız yok
                 </p>
