@@ -13,9 +13,10 @@ interface ProfileEditModalProps {
   user: UserType | null;
   isOpen: boolean;
   onClose: () => void;
+  onProfileUpdate?: (updatedUser: UserType) => void;
 }
 
-export default function ProfileEditModal({ user, isOpen, onClose }: ProfileEditModalProps) {
+export default function ProfileEditModal({ user, isOpen, onClose, onProfileUpdate }: ProfileEditModalProps) {
   const [username, setUsername] = useState(user?.username || "");
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(user?.profileImage || null);
@@ -36,6 +37,9 @@ export default function ProfileEditModal({ user, isOpen, onClose }: ProfileEditM
     onSuccess: (updatedUser) => {
       // Update localStorage with the new user data
       localStorage.setItem("ibx-user", JSON.stringify(updatedUser));
+      
+      // Call the callback to update parent component state
+      onProfileUpdate?.(updatedUser);
       
       toast({
         title: "Başarılı",

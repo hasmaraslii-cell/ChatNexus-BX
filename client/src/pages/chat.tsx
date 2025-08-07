@@ -132,6 +132,26 @@ export default function Chat() {
     }
   }, []);
 
+  // Sync current user from localStorage periodically (in case updated by ProfileEditModal)
+  useEffect(() => {
+    const syncCurrentUser = () => {
+      const savedUser = localStorage.getItem("ibx-user");
+      if (savedUser && currentUser) {
+        try {
+          const user = JSON.parse(savedUser);
+          if (user.id === currentUser.id && JSON.stringify(user) !== JSON.stringify(currentUser)) {
+            setCurrentUser(user);
+          }
+        } catch (error) {
+          // Ignore JSON parse errors
+        }
+      }
+    };
+
+    const interval = setInterval(syncCurrentUser, 2000); // Sync every 2 seconds
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   const handleUserRegistration = (user: User) => {
     setCurrentUser(user);
     setShowRegistration(false);
@@ -154,6 +174,13 @@ export default function Chat() {
     setProfileEditUser(user);
     if (isMobile) {
       setShowUserSidebar(false);
+    }
+  };
+
+  const handleProfileUpdate = (updatedUser: User) => {
+    // Update the current user state immediately to reflect changes in sidebar
+    if (currentUser && updatedUser.id === currentUser.id) {
+      setCurrentUser(updatedUser);
     }
   };
 
@@ -292,6 +319,7 @@ export default function Chat() {
         user={profileEditUser}
         isOpen={!!profileEditUser}
         onClose={() => setProfileEditUser(null)}
+        onProfileUpdate={handleProfileUpdate}
       />
 
       {/* Ban User Modal */}
