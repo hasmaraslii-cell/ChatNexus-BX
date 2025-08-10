@@ -10,7 +10,7 @@ interface UserListSidebarProps {
   offlineUsers: User[];
   currentUserId?: string;
   onEditProfile?: (user: User) => void;
-  onBanUser?: (user: User) => void;
+
   onStartDM?: (user: User) => void;
 
 }
@@ -20,7 +20,7 @@ export default function UserListSidebar({
   offlineUsers = [], 
   currentUserId, 
   onEditProfile, 
-  onBanUser,
+
   onStartDM
 }: UserListSidebarProps) {
   const [showOnline, setShowOnline] = useState(true);
@@ -73,11 +73,9 @@ export default function UserListSidebar({
     return colors[userId.length % colors.length];
   };
 
-  const handleUserAction = (user: User, action: "edit" | "ban") => {
+  const handleUserAction = (user: User, action: "edit") => {
     if (action === "edit" && onEditProfile) {
       onEditProfile(user);
-    } else if (action === "ban" && onBanUser && currentUser?.isAdmin) {
-      onBanUser(user);
     }
   };
 
@@ -108,9 +106,7 @@ export default function UserListSidebar({
           >
             {user.username}
           </button>
-          {user.isAdmin && (
-            <Shield className="w-4 h-4 text-yellow-500" />
-          )}
+
         </div>
         <p className="text-xs text-[var(--discord-light)]/70">
           {getStatusText(user)}
@@ -133,17 +129,7 @@ export default function UserListSidebar({
         
 
         
-        {onBanUser && currentUser?.isAdmin && user.id !== currentUserId && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleUserAction(user, "ban")}
-            className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
-            title="Kullanıcıyı Yasakla"
-          >
-            <Ban className="w-3 h-3" />
-          </Button>
-        )}
+
       </div>
     </div>
   );

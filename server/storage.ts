@@ -101,13 +101,12 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const isFirstUser = this.users.size === 0; // İlk kullanıcı otomatik admin olacak
     const user: User = { 
       id,
       username: insertUser.username,
       profileImage: insertUser.profileImage || null,
       status: insertUser.status || "online",
-      isAdmin: isFirstUser, // İlk kullanıcı admin
+      isAdmin: false, // Artık admin sistemi yok
       lastSeen: new Date(),
       bannedUntil: null,
     };
@@ -571,7 +570,7 @@ export class PostgreSQLStorage implements IStorage {
         if (room.participants && room.participants.includes(userId)) {
           // Get all participant usernames
           const participantUsers = await Promise.all(
-            room.participants.map(id => this.getUser(id))
+            room.participants.map((id: string) => this.getUser(id))
           );
           
           const validUsers = participantUsers.filter(user => user !== undefined);

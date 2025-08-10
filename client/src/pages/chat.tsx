@@ -4,7 +4,7 @@ import RoomSidebar from "@/components/room-sidebar";
 import MainChatArea from "@/components/main-chat-area";
 import UserListSidebar from "@/components/user-list-sidebar";
 import ProfileEditModal from "@/components/profile-edit-modal";
-import BanUserModal from "@/components/ban-user-modal";
+
 import MobileMenu from "@/components/mobile-menu";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -20,7 +20,7 @@ export default function Chat() {
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [showRegistration, setShowRegistration] = useState(true);
   const [profileEditUser, setProfileEditUser] = useState<User | null>(null);
-  const [banUser, setBanUser] = useState<User | null>(null);
+
   const [showRoomSidebar, setShowRoomSidebar] = useState(false);
   const [showUserSidebar, setShowUserSidebar] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<MessageWithUser | null>(null);
@@ -197,12 +197,7 @@ export default function Chat() {
     }
   };
 
-  const handleBanUser = (user: User) => {
-    setBanUser(user);
-    if (isMobile) {
-      setShowUserSidebar(false);
-    }
-  };
+
 
   // Room reordering mutation
 
@@ -312,9 +307,7 @@ export default function Chat() {
           offlineUsers={Array.isArray(offlineUsers) ? offlineUsers : []}
           currentUserId={currentUser?.id}
           onEditProfile={handleEditProfile}
-          onBanUser={handleBanUser}
           onStartDM={handleStartDM}
-          onLogout={handleLogout}
         />
       </div>
 
@@ -338,12 +331,7 @@ export default function Chat() {
         onProfileUpdate={handleProfileUpdate}
       />
 
-      {/* Ban User Modal */}
-      <BanUserModal
-        user={banUser}
-        isOpen={!!banUser}
-        onClose={() => setBanUser(null)}
-      />
+
 
 
     </div>

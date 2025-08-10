@@ -36,10 +36,41 @@ export class NexaBot {
   }
 
   async processMessage(message: any, roomId: string): Promise<void> {
-    if (!message.content || !message.content.startsWith("!")) return;
+    if (!message.content) return;
     if (!this.botUser) await this.initializeBot();
 
     const content = message.content.trim();
+    
+    // Check for profanity filter
+    if (this.containsProfanity(content)) {
+      await this.sendMessage("⚠️ Lütfen nezaket kurallarına uygun mesajlar yazın.", roomId);
+      return;
+    }
+
+    // Check if bot is mentioned (case insensitive, handle spaces in names)
+    const normalizedContent = content.toLowerCase();
+    const botMentions = ['nexabot', 'nexa bot', '@nexabot', '@nexa bot'];
+    const isMentioned = botMentions.some(mention => normalizedContent.includes(mention));
+    
+    if (isMentioned && !content.startsWith("!")) {
+      // Remove mention from message and respond with AI
+      let cleanMessage = content;
+      botMentions.forEach(mention => {
+        const regex = new RegExp(mention, 'gi');
+        cleanMessage = cleanMessage.replace(regex, '').trim();
+      });
+      
+      if (cleanMessage.length > 0) {
+        await this.chatWithAI(cleanMessage, roomId);
+      } else {
+        await this.sendMessage("🤖 Merhaba! Size nasıl yardımcı olabilirim? !yardım yazarak komutları görebilirsiniz.", roomId);
+      }
+      return;
+    }
+
+    // Process commands
+    if (!content.startsWith("!")) return;
+    
     const args = content.split(" ");
     const command = args[0].toLowerCase();
 
@@ -52,7 +83,7 @@ export class NexaBot {
         case "!ara":
           if (args.length > 1) {
             const query = args.slice(1).join(" ");
-            await this.searchWeb(query, roomId);
+            await this.searchWithAI(query, roomId);
           } else {
             await this.sendMessage("Kullanım: !ara <arama terimi>", roomId);
           }
@@ -717,6 +748,48 @@ ${content}`, roomId);
     } catch (error) {
       console.error("Creative Content Error:", error);
       await this.sendMessage("İçerik oluşturulamadı. Lütfen daha sonra tekrar deneyin.", roomId);
+    }
+  }
+
+  private containsProfanity(text: string): boolean {
+    const profanityWords = [
+      'amk', 'amq', 'oç', 'aq', 'mk', 'salak', 'aptal', 'gerizekalı', 
+      'mal', 'köpek', 'it', 'pislik', 'kaka', 'boktan', 'saçma',
+      'fuck', 'shit', 'damn', 'bitch', 'ass', 'hell', 'stupid', 'idiot'
+    ];
+    
+    const normalizedText = text.toLowerCase()
+      .replace(/[^a-züığıöşç]/g, ' ')
+      .split(' ')
+      .filter(word => word.length > 0);
+    
+    return profanityWords.some(profanity => 
+      normalizedText.some(word => 
+        word.includes(profanity) || profanity.includes(word)
+      )
+    );
+  }
+
+  private async searchWithAI(query: string, roomId: string): Promise<void> {
+    try {
+      await this.sendMessage(`🔍 **"${query}" aranıyor...** 🤖
+      
+AI ile gelişmiş arama yapılıyor...`, roomId);
+
+      const searchPrompt = `"${query}" hakkında detaylı ve güncel bilgi ver. Konuyla ilgili önemli noktaları, tanımları ve ilginç bilgileri içeren kapsamlı bir açıklama yap. Maksimum 400 kelime kullan.`;
+      
+      const aiResponse = await aiService.generateResponse(searchPrompt);
+      
+      await this.sendMessage(`🔍 **"${query}" için AI Arama Sonucu:**
+
+${aiResponse}
+
+💡 *Bu bilgiler AI tarafından sağlanmıştır. Daha detaylı bilgi için güvenilir kaynaklari kontrol edin.*`, roomId);
+
+    } catch (error) {
+      console.error("AI Search Error:", error);
+      // Fallback to original web search if AI fails
+      await this.searchWeb(query, roomId);
     }
   }
 }

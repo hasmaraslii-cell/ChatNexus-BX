@@ -1,0 +1,1 @@
+Admin panel removed as per user request - no admin functionality needed
