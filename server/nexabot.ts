@@ -199,14 +199,7 @@ export class NexaBot {
             await this.sendMessage("Kullanım: !sohbet <mesajınız> - Benimle doğal sohbet edin!", roomId);
           }
           break;
-        case "!gif":
-          if (args.length > 1) {
-            const query = args.slice(1).join(" ");
-            await this.generateGif(query, roomId);
-          } else {
-            await this.sendMessage("Kullanım: !gif <metin> - Metne uygun gif oluştur!", roomId);
-          }
-          break;
+
         default:
           // Eğer komut ! ile başlıyorsa ve bilinmiyorsa, AI'ya sor
           if (content.startsWith("!")) {
@@ -666,7 +659,7 @@ Cevabını yazabilirsin! 📐
 
 **🤖 AI Özellikleri:**
 • !ai <soru> • !sor <soru> • !sohbet <mesaj> • !çevir <metin>
-• !açıkla <konu> • !şiir <konu> • !hikaye <konu> • !gif <metin>
+• !açıkla <konu> • !şiir <konu> • !hikaye <konu>
 
 **🔍 Arama & Bilgi:**
 • !ara <metin> • !saat • !bilgi • !hava <şehir>
@@ -803,21 +796,7 @@ ${aiResponse}
     }
   }
 
-  private async generateGif(query: string, roomId: string): Promise<void> {
-    try {
-      const gifPrompt = `"${query}" konulu eğlenceli bir gif tanımla. Görsel detayları ve hareketleri anlat. Kısa ve komik olsun.`;
-      
-      const response = await aiService.generateResponse(gifPrompt);
-      await this.sendMessage(`🎬 **GIF: ${query}**
 
-${response}
-
-🎭 *AI tarafından oluşturulan gif tanımı. Gerçek gif için Tenor/Giphy kullanabilirsiniz.*`, roomId);
-    } catch (error) {
-      console.error("GIF Generation Error:", error);
-      await this.sendMessage("GIF oluşturulamadı. Lütfen daha sonra tekrar deneyin.", roomId);
-    }
-  }
 }
 
 export const nexaBot = new NexaBot();
