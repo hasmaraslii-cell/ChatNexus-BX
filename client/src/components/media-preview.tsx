@@ -1,10 +1,10 @@
-import { X, Play, Eye } from "lucide-react";
+import { X, Play, Eye, FileText, Archive, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MediaFile {
   file: File;
   preview: string;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'document' | 'archive' | 'audio';
 }
 
 interface MediaPreviewProps {
@@ -43,7 +43,7 @@ export default function MediaPreview({ mediaFiles, onRemove, onClear }: MediaPre
                   alt={`Preview ${index + 1}`}
                   className="w-full h-full object-cover"
                 />
-              ) : (
+              ) : media.type === 'video' ? (
                 <div className="w-full h-full bg-black flex items-center justify-center">
                   <video
                     src={media.preview}
@@ -51,6 +51,18 @@ export default function MediaPreview({ mediaFiles, onRemove, onClear }: MediaPre
                     muted
                   />
                   <Play className="absolute inset-0 m-auto w-6 h-6 text-white/70" />
+                </div>
+              ) : media.type === 'audio' ? (
+                <div className="w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                  <Music className="w-8 h-8 text-white" />
+                </div>
+              ) : media.type === 'archive' ? (
+                <div className="w-full h-full bg-gradient-to-br from-orange-600 to-red-600 flex items-center justify-center">
+                  <Archive className="w-8 h-8 text-white" />
+                </div>
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-green-600 to-blue-600 flex items-center justify-center">
+                  <FileText className="w-8 h-8 text-white" />
                 </div>
               )}
               
@@ -68,7 +80,10 @@ export default function MediaPreview({ mediaFiles, onRemove, onClear }: MediaPre
               <div className="absolute bottom-1 left-1">
                 <div className="bg-black/60 rounded px-1 py-0.5">
                   <span className="text-xs text-white font-medium uppercase">
-                    {media.type === 'image' ? 'IMG' : 'VID'}
+                    {media.type === 'image' ? 'IMG' : 
+                     media.type === 'video' ? 'VID' :
+                     media.type === 'audio' ? 'AUD' :
+                     media.type === 'archive' ? 'ZIP' : 'DOC'}
                   </span>
                 </div>
               </div>

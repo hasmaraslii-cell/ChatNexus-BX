@@ -291,10 +291,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const messageData = insertMessageSchema.parse(req.body);
       
-      // Verify room exists
-      const room = await storage.getRoom(messageData.roomId);
+      // Verify room exists - try both regular rooms and DM rooms
+      let room = await storage.getRoom(messageData.roomId);
       if (!room) {
-        return res.status(404).json({ message: "Oda bulunamadı" });
+        // Try to find it as a DM room
+        const allRooms = await storage.getAllRooms();
+        room = allRooms.find(r => r.id === messageData.roomId);
+        if (!room) {
+          console.error(`Room not found: ${messageData.roomId}`);
+          return res.status(404).json({ message: "Oda bulunamadı" });
+        }
       }
       
       // Verify user exists

@@ -38,6 +38,11 @@ Recent Customizations (Aug 2025):
 - **COMPLETED**: Enhanced AI mention detection (responds to "Nexa", "NexaBot", "nexa yapay zeka")  
 - **COMPLETED**: Improved keyboard controls (Enter for new line, Ctrl+Enter to send)
 - **COMPLETED**: Removed non-functional GIF command per user request
+- **COMPLETED**: Successfully migrated from Replit Agent to standard Replit environment (Aug 10, 2025)
+- **COMPLETED**: Fixed message sending issues - messages can now be sent normally (Aug 10, 2025)
+- **COMPLETED**: Extended file support to all types: images, videos, documents, archives, audio files (Aug 10, 2025)
+- **COMPLETED**: Enhanced media preview with file type icons and horizontal scrolling (Aug 10, 2025)
+- **COMPLETED**: Removed overly aggressive NexaBot profanity filter that was incorrectly flagging messages (Aug 10, 2025)
 - Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
 - File upload limits: 50MB max, up to 20 files simultaneously
 - WhatsApp-style grouped file uploads to prevent spam

@@ -24,7 +24,7 @@ interface MainChatAreaProps {
 interface MediaFile {
   file: File;
   preview: string;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'document' | 'archive' | 'audio';
 }
 
 export default function MainChatArea({ currentRoom, currentUser, replyToMessage, onClearReply, onReply, onStartDM }: MainChatAreaProps) {
@@ -140,7 +140,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
         attachments = uploadResults.map((result: any, index: number) => ({
           type: selectedMedia[index].type,
           url: result.path,
-          name: result.originalName
+          name: result.originalName || result.filename
         }));
       } catch (error) {
         toast({
@@ -279,13 +279,23 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
 
       const isImage = file.type.startsWith('image/');
       const isVideo = file.type.startsWith('video/');
+      const isDocument = file.type.includes('pdf') || file.type.includes('document') || file.type.includes('text');
+      const isArchive = file.type.includes('zip') || file.type.includes('rar') || file.type.includes('7z');
+      const isAudio = file.type.startsWith('audio/');
       
-      if (isImage || isVideo) {
+      if (isImage || isVideo || isDocument || isArchive || isAudio) {
         const preview = URL.createObjectURL(file);
+        let fileType: 'image' | 'video' | 'document' | 'archive' | 'audio' = 'document';
+        
+        if (isImage) fileType = 'image';
+        else if (isVideo) fileType = 'video';
+        else if (isArchive) fileType = 'archive';
+        else if (isAudio) fileType = 'audio';
+        
         newMediaFiles.push({
           file,
           preview,
-          type: isImage ? 'image' : 'video'
+          type: fileType as any
         });
       }
     }
@@ -785,7 +795,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
                 <input
                   id="media-input"
                   type="file"
-                  accept="image/*,video/*"
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar,.7z"
                   multiple
                   className="hidden"
                   onChange={handleMediaSelect}
