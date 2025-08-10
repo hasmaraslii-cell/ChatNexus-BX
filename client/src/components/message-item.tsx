@@ -702,6 +702,95 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
           </div>
         )}
 
+        {/* NEW ATTACHMENTS SUPPORT - Multiple files in single message */}
+        {message.attachments && JSON.parse(message.attachments || '[]').length > 0 && (
+          <div className="mb-3 space-y-2">
+            {JSON.parse(message.attachments).map((attachment: any, index: number) => {
+              const isImage = attachment.type === 'image' || attachment.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+              const isVideo = attachment.type === 'video' || attachment.url?.match(/\.(mp4|webm|mov|avi)$/i);
+              const isAudio = attachment.type === 'audio' || attachment.url?.match(/\.(mp3|wav|ogg|m4a)$/i);
+              const isArchive = attachment.type === 'archive' || attachment.url?.match(/\.(zip|rar|7z|tar|gz)$/i);
+              
+              if (isImage) {
+                return (
+                  <div key={index} className="relative group">
+                    <img
+                      src={attachment.url}
+                      alt={attachment.name || "Resim"}
+                      className="max-w-sm max-h-64 rounded-lg border border-[var(--discord-light)]/20 hover:border-[var(--discord-light)]/40 transition-all cursor-pointer shadow-lg"
+                      onClick={() => setShowImagePreview(true)}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <Eye className="w-6 h-6 text-white drop-shadow-lg" />
+                    </div>
+                    {attachment.name && (
+                      <div className="mt-2 text-sm text-[var(--discord-light)]/70">
+                        {attachment.name}
+                      </div>
+                    )}
+                  </div>
+                );
+              } else if (isVideo) {
+                return (
+                  <div key={index} className="relative group">
+                    <video
+                      src={attachment.url}
+                      className="max-w-sm max-h-64 rounded-lg border border-[var(--discord-light)]/20"
+                      controls
+                    />
+                    {attachment.name && (
+                      <div className="mt-2 text-sm text-[var(--discord-light)]/70">
+                        {attachment.name}
+                      </div>
+                    )}
+                  </div>
+                );
+              } else if (isAudio) {
+                return (
+                  <div key={index} className="bg-[var(--discord-darker)] rounded-lg p-3 border border-[var(--discord-light)]/20 max-w-sm">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                        <Mic className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[var(--discord-light)] font-medium truncate">
+                          {attachment.name || "Ses Dosyası"}
+                        </div>
+                        <audio src={attachment.url} controls className="mt-2 w-full max-w-xs" />
+                      </div>
+                    </div>
+                  </div>
+                );
+              } else {
+                return (
+                  <div key={index} className="bg-[var(--discord-darker)] rounded-lg p-3 border border-[var(--discord-light)]/20 max-w-sm">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">
+                          {isArchive ? '📁' : '📄'}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[var(--discord-light)] font-medium truncate">
+                          {attachment.name || "Dosya"}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => window.open(attachment.url, '_blank')}
+                        className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)]"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              }
+            })}
+          </div>
+        )}
+
         {/* File Content */}
         {message.messageType === "file" && message.fileName && (
           <div className="bg-[var(--discord-darker)] border border-[var(--discord-light)]/20 rounded-lg p-3 max-w-xs mb-3">
@@ -793,15 +882,23 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
       </div>
       
       {/* Image Preview Modal */}
-      {showImagePreview && message.messageType === "image" && message.filePath && (
+      {showImagePreview && (
         <ImagePreviewModal
           isOpen={showImagePreview}
           onClose={() => setShowImagePreview(false)}
           images={[{
-            src: message.filePath,
-            alt: message.fileName || "Image",
-            fileName: message.fileName || undefined,
-            filePath: message.filePath || undefined,
+            src: message.attachments && JSON.parse(message.attachments || '[]').length > 0
+              ? JSON.parse(message.attachments)[0].url
+              : message.filePath || "",
+            alt: message.attachments && JSON.parse(message.attachments || '[]').length > 0
+              ? JSON.parse(message.attachments)[0].name
+              : message.fileName || "Image",
+            fileName: message.attachments && JSON.parse(message.attachments || '[]').length > 0
+              ? JSON.parse(message.attachments)[0].name
+              : message.fileName,
+            filePath: message.attachments && JSON.parse(message.attachments || '[]').length > 0
+              ? JSON.parse(message.attachments)[0].url
+              : message.filePath,
           }]}
           initialIndex={0}
         />

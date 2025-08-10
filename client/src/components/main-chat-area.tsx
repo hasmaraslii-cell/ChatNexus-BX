@@ -781,21 +781,35 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
 
             <form onSubmit={handleSubmit} className="flex items-end p-3 space-x-2">
               <div className="relative">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0"
-                  title="Medya Dosyası Ekle"
-                  onClick={() => document.getElementById('media-input')?.click()}
-                  data-testid="button-add-media"
-                >
-                  <Image className="w-5 h-5" />
-                </Button>
+                <div className="relative group">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0 transition-all duration-200 hover:scale-105"
+                    title="Medya Dosyası Ekle"
+                    onClick={() => document.getElementById('media-input')?.click()}
+                    data-testid="button-add-media"
+                  >
+                    <Image className="w-5 h-5" />
+                  </Button>
+                  
+                  {/* Beautiful file upload tooltip */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
+                    <div className="flex items-center space-x-2">
+                      <span>📎 Dosya & Sticker Ekle</span>
+                    </div>
+                    <div className="text-xs text-gray-300 mt-1">
+                      Resim, Video, GIF, Belge
+                    </div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
+                  </div>
+                </div>
+                
                 <input
                   id="media-input"
                   type="file"
-                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar,.7z"
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar,.7z,.gif,.webp"
                   multiple
                   className="hidden"
                   onChange={handleMediaSelect}
