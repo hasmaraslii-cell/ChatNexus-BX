@@ -2,8 +2,8 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
-export class AIService {
-  private model = "gemini-2.5-flash";
+class AIService {
+  private model = "gemini-1.5-flash";
 
   async generateResponse(prompt: string, context?: string): Promise<string> {
     try {
@@ -11,18 +11,20 @@ export class AIService {
 
       const response = await ai.models.generateContent({
         model: this.model,
-        config: {
-          systemInstruction: systemPrompt,
+        contents: [
+          { role: "user", parts: [{ text: `${systemPrompt}\n\nSoru: ${prompt}` }] }
+        ],
+        generationConfig: {
           maxOutputTokens: 150,
           temperature: 0.8,
         },
-        contents: prompt,
       });
 
       return response.text || "Üzgünüm, şu anda cevap veremiyorum.";
     } catch (error) {
       console.error("AI Response Error:", error);
-      return "AI servisinde bir hata oluştu.";
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      return `AI servisi hatası: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`;
     }
   }
 
@@ -32,11 +34,11 @@ export class AIService {
       
       const response = await ai.models.generateContent({
         model: this.model,
-        config: {
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
           maxOutputTokens: 200,
           temperature: 0.3,
         },
-        contents: prompt,
       });
 
       return response.text || "Çeviri yapılamadı.";
@@ -52,11 +54,11 @@ export class AIService {
       
       const response = await ai.models.generateContent({
         model: this.model,
-        config: {
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
           maxOutputTokens: 200,
           temperature: 0.7,
         },
-        contents: prompt,
       });
 
       return response.text || "Bu konu hakkında bilgi bulunamadı.";
@@ -86,12 +88,11 @@ export class AIService {
 
       const response = await ai.models.generateContent({
         model: this.model,
-        config: {
-          systemInstruction: systemPrompt,
+        contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\n${prompt}` }] }],
+        generationConfig: {
           maxOutputTokens: 200,
           temperature: 0.9,
         },
-        contents: prompt,
       });
 
       return response.text || "Yaratıcı içerik oluşturulamadı.";
