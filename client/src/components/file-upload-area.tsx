@@ -78,7 +78,7 @@ export default function FileUploadArea({ onFileUpload }: FileUploadAreaProps) {
             </Button>
           </p>
           <p className="text-xs text-[var(--discord-light)]/50">
-            Maksimum 50MB - Resim, video, doküman desteklenir
+            Maksimum 50MB - Resim, GIF, video, doküman desteklenir
           </p>
         </div>
       </div>

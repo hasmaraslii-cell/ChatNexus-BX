@@ -179,8 +179,9 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
       
       if (uploadResult && uploadResult.length > 0) {
         const fileInfo = uploadResult[0];
-        // Determine message type based on file type
-        const messageType = file.type.startsWith('image/') ? 'image' :
+        // Determine message type based on file type, with special handling for GIFs
+        const messageType = file.type === 'image/gif' ? 'gif' :
+                          file.type.startsWith('image/') ? 'image' :
                           file.type.startsWith('video/') ? 'video' :
                           file.type.startsWith('audio/') ? 'voice' : 'file';
         
@@ -197,7 +198,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
         
         toast({
           title: "Başarılı",
-          description: "Dosya gönderildi",
+          description: messageType === 'gif' ? "GIF gönderildi" : "Dosya gönderildi",
         });
       }
     } catch (error) {
@@ -368,6 +369,58 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     }, 0);
   };
 
+  // Handle paste events for GIFs from mobile keyboards
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData.items;
+    
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      
+      // Check if the pasted item is a file (including GIFs)
+      if (item.kind === 'file') {
+        e.preventDefault();
+        const file = item.getAsFile();
+        
+        if (file) {
+          // Handle GIF files specifically
+          if (file.type === 'image/gif') {
+            toast({
+              title: "GIF algılandı",
+              description: "GIF'iniz yükleniyor...",
+            });
+          }
+          
+          await handleFileUpload(file);
+        }
+        return;
+      }
+    }
+  };
+
+  // Handle drag and drop events for GIFs
+  const handleDrop = async (e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      
+      // Handle GIF files specifically
+      if (file.type === 'image/gif') {
+        toast({
+          title: "GIF algılandı",
+          description: "GIF'iniz yükleniyor...",
+        });
+      }
+      
+      await handleFileUpload(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+  };
+
   return (
     <div className="flex flex-col h-full bg-[var(--discord-dark)] relative">
 
@@ -454,6 +507,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
                     {replyToMessage.content || (
                       replyToMessage.messageType === "voice" ? "🎤 Sesli mesaj" :
                       replyToMessage.messageType === "image" ? "🖼️ Resim" :
+                      replyToMessage.messageType === "gif" ? "🎭 GIF" :
                       replyToMessage.messageType === "file" ? "📁 Dosya" : "Medya mesajı"
                     )}
                   </p>
@@ -520,6 +574,9 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
                   value={message}
                   onChange={handleMessageChange}
                   onKeyDown={handleKeyDown}
+                  onPaste={handlePaste}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
                   className="w-full bg-transparent text-[var(--discord-light)] placeholder:text-[var(--discord-light)]/50 resize-none border-none focus:ring-0 focus:outline-none min-h-0 p-0 text-sm md:text-base"
                   placeholder={replyToMessage ? `${replyToMessage.user.username} kullanıcısına yanıt ver... (Ctrl+Enter: gönder)` : (currentRoom.isDM ? `@${currentRoom.name} kişisine mesaj gönder (Ctrl+Enter: gönder)` : `#${currentRoom.name} kanalına mesaj gönder (Ctrl+Enter: gönder)`)}
                   rows={1}

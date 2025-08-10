@@ -459,6 +459,7 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
                 {message.replyTo.content || (
                   message.replyTo.messageType === "voice" ? "🎤 Sesli mesaj" :
                   message.replyTo.messageType === "image" ? "🖼️ Resim" :
+                  message.replyTo.messageType === "gif" ? "🎭 GIF" :
                   message.replyTo.messageType === "file" ? "📁 Dosya" : "Medya mesajı"
                 )}
               </p>
@@ -540,6 +541,42 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
                 alt={message.fileName || "Image"}
                 className="rounded-lg w-full h-auto max-h-96 object-contain transition-opacity duration-200 group-hover:opacity-80"
               />
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/50 rounded-lg">
+                <Eye className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-2 text-sm text-[var(--discord-light)]/70">
+              <span>{message.fileName}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hover:text-[var(--discord-light)] p-1"
+                title="İndir"
+                onClick={handleDownloadFile}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {/* GIF Content */}
+        {message.messageType === "gif" && message.filePath && (
+          <div className="bg-[var(--discord-darker)] rounded-lg p-2 max-w-md mb-3">
+            <div className="relative group cursor-pointer" onClick={() => setShowImagePreview(true)}>
+              <img 
+                src={message.filePath} 
+                alt={message.fileName || "GIF"}
+                className="rounded-lg w-full h-auto max-h-96 object-contain transition-opacity duration-200 group-hover:opacity-80"
+              />
+              <div className="absolute top-2 left-2 bg-[var(--discord-blurple)] text-white text-xs px-2 py-1 rounded-full font-bold">
+                GIF
+              </div>
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/50 rounded-lg">
                 <Eye className="w-8 h-8 text-white" />
               </div>
