@@ -24,6 +24,10 @@ Recent Customizations (Aug 2025):
 - **COMPLETED**: Fixed dark theme message hover effects (white hitbox issue resolved)
 - **COMPLETED**: Added NexaBot with entertainment commands and free web search functionality
 - **COMPLETED**: Fixed DM profile pictures and username updating issues
+- **COMPLETED**: Enhanced message formatting with markdown support (**bold**, *italic*, line breaks)
+- **COMPLETED**: Improved link formatting [text](url) with clickable blue styling
+- **COMPLETED**: Enhanced bot search with DuckDuckGo and Wikipedia APIs for better results
+- **COMPLETED**: Added many new entertainment commands (weather, facts, games, word puzzles)
 - Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
 - File upload limits: 50MB max, up to 20 files simultaneously
 - WhatsApp-style grouped file uploads to prevent spam

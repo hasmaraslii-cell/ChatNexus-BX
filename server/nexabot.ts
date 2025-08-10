@@ -177,40 +177,25 @@ Keyifli sohbetler! 💫`;
 
   private async searchWeb(query: string, roomId: string): Promise<void> {
     try {
-      // Use SerpApi free tier or similar service for better search results
-      const searchUrl = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&api_key=demo`;
-      let searchData = null;
-      
-      try {
-        const searchResponse = await fetch(searchUrl);
-        if (searchResponse.ok) {
-          searchData = await searchResponse.json();
-        }
-      } catch (err) {
-        console.log("SerpApi failed, using DuckDuckGo fallback");
-      }
+      await this.sendMessage(`🔍 **"${query}" aranıyor...** 🤖
 
+Lütfen bekleyin, arama sonuçlarını getiriyorum...`, roomId);
+
+      // Try multiple DuckDuckGo approaches
       let resultText = `🔍 **"${query}" için arama sonuçları:**
 
 `;
+      let hasResults = false;
 
-      // Try SerpApi results first
-      if (searchData && searchData.organic_results && searchData.organic_results.length > 0) {
-        const results = searchData.organic_results.slice(0, 3);
-        results.forEach((result: any, index: number) => {
-          resultText += `**${index + 1}. [${result.title}](${result.link})**
-${result.snippet || "Açıklama bulunamadı"}
-
-`;
-        });
-      } else {
-        // Fallback to DuckDuckGo
+      // Method 1: DuckDuckGo Instant Answers API
+      try {
         const duckResponse = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1&skip_disambig=1`);
         const data = await duckResponse.json();
 
         if (data.AbstractText) {
           resultText += `📝 **Özet:** ${data.AbstractText}
 `;
+          hasResults = true;
           if (data.AbstractURL) {
             resultText += `🔗 **Kaynak:** [Daha fazla bilgi](${data.AbstractURL})
 
@@ -221,13 +206,14 @@ ${result.snippet || "Açıklama bulunamadı"}
         if (data.RelatedTopics && data.RelatedTopics.length > 0) {
           resultText += `**📚 İlgili Konular:**
 `;
-          const topics = data.RelatedTopics.slice(0, 2);
+          const topics = data.RelatedTopics.slice(0, 3);
           topics.forEach((topic: any, index: number) => {
             if (topic.Text) {
               resultText += `${index + 1}. ${topic.Text}
 `;
+              hasResults = true;
               if (topic.FirstURL) {
-                resultText += `   🔗 [Kaynak](${topic.FirstURL})
+                resultText += `   🔗 [Detaylar](${topic.FirstURL})
 
 `;
               }
@@ -238,36 +224,84 @@ ${result.snippet || "Açıklama bulunamadı"}
         if (data.Answer) {
           resultText += `💡 **Hızlı Yanıt:** ${data.Answer}
 `;
+          hasResults = true;
         }
 
         if (data.Definition) {
           resultText += `📖 **Tanım:** ${data.Definition}
 `;
+          hasResults = true;
           if (data.DefinitionURL) {
             resultText += `🔗 **Kaynak:** [Sözlük](${data.DefinitionURL})
 `;
           }
         }
 
-        // If no meaningful results, provide fallback links
-        if (!data.AbstractText && !data.RelatedTopics?.length && !data.Answer && !data.Definition) {
-          resultText += `Maalesef "${query}" için detaylı sonuç bulunamadı.
-
-🌐 **Manuel arama için:**
-• [Google'da Ara](https://www.google.com/search?q=${encodeURIComponent(query)})
-• [DuckDuckGo'da Ara](https://duckduckgo.com/?q=${encodeURIComponent(query)})
-• [Bing'de Ara](https://www.bing.com/search?q=${encodeURIComponent(query)})`;
+        if (data.Infobox && data.Infobox.content && data.Infobox.content.length > 0) {
+          resultText += `**ℹ️ Bilgi Kutusu:**
+`;
+          data.Infobox.content.slice(0, 3).forEach((info: any) => {
+            if (info.label && info.value) {
+              resultText += `• **${info.label}:** ${info.value}
+`;
+              hasResults = true;
+            }
+          });
+          resultText += `
+`;
         }
+      } catch (err) {
+        console.log("DuckDuckGo API error:", err);
+      }
+
+      // Method 2: Try Wikipedia API as fallback
+      if (!hasResults) {
+        try {
+          const wikiResponse = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query.split(' ').join('_'))}`);
+          if (wikiResponse.ok) {
+            const wikiData = await wikiResponse.json();
+            if (wikiData.extract) {
+              resultText += `📚 **Wikipedia'dan:** ${wikiData.extract}
+
+🔗 **Kaynak:** [Wikipedia](${wikiData.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(query)}`})
+
+`;
+              hasResults = true;
+            }
+          }
+        } catch (err) {
+          console.log("Wikipedia API error:", err);
+        }
+      }
+
+      // If still no results, provide helpful manual search links
+      if (!hasResults) {
+        resultText += `Üzgünüm, "${query}" için otomatik arama sonucu bulunamadı.
+
+🌐 **Manuel arama yapabileceğin siteler:**
+• [Google'da "${query}" ara](https://www.google.com/search?q=${encodeURIComponent(query)})
+• [DuckDuckGo'da "${query}" ara](https://duckduckgo.com/?q=${encodeURIComponent(query)})
+• [Bing'de "${query}" ara](https://www.bing.com/search?q=${encodeURIComponent(query)})
+• [Wikipedia'da "${query}" ara](https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)})
+
+**💡 İpucu:** Daha spesifik kelimeler kullanarak tekrar dene!`;
+      } else {
+        resultText += `**🌐 Daha fazla arama:**
+• [Google'da ara](https://www.google.com/search?q=${encodeURIComponent(query)})
+• [DuckDuckGo'da ara](https://duckduckgo.com/?q=${encodeURIComponent(query)})`;
       }
 
       await this.sendMessage(resultText, roomId);
     } catch (error) {
       console.error("Search error:", error);
-      await this.sendMessage(`❌ Arama sırasında hata oluştu. 
+      await this.sendMessage(`❌ Arama sırasında hata oluştu.
 
 **🌐 Manuel arama linkleri:**
 • [Google'da "${query}" ara](https://www.google.com/search?q=${encodeURIComponent(query)})
-• [DuckDuckGo'da "${query}" ara](https://duckduckgo.com/?q=${encodeURIComponent(query)})`, roomId);
+• [DuckDuckGo'da "${query}" ara](https://duckduckgo.com/?q=${encodeURIComponent(query)})
+• [Wikipedia'da "${query}" ara](https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)})
+
+Lütfen manuel olarak arama yapmayı dene! 🔍`, roomId);
     }
   }
 
