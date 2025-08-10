@@ -55,6 +55,7 @@ export class MemStorage implements IStorage {
   private rooms: Map<string, Room>;
   private messages: Map<string, Message>;
   private typingIndicators: Map<string, TypingIndicator>;
+  private botInitialized = false;
 
   constructor() {
     this.users = new Map();
@@ -64,6 +65,9 @@ export class MemStorage implements IStorage {
     
     // Initialize default rooms
     this.initializeDefaultRooms();
+    
+    // Initialize NexaBot
+    this.initializeBotUser();
     
     // Clean up old typing indicators every 10 seconds
     setInterval(() => this.cleanupOldTypingIndicators(), 10000);
@@ -94,6 +98,34 @@ export class MemStorage implements IStorage {
       };
       this.rooms.set(id, room);
     }
+  }
+
+  private initializeBotUser() {
+    if (this.botInitialized) {
+      console.log("MemStorage: Bot initialization already completed");
+      return;
+    }
+
+    // NexaBot'u oluştur (sadece bir kez)
+    const existingBot = Array.from(this.users.values()).find(user => user.username === "NexaBot");
+    if (!existingBot) {
+      const bot: User = {
+        id: randomUUID(),
+        username: "NexaBot",
+        profileImage: "https://i.imgur.com/2FDBAwR.png",
+        status: "online",
+        isAdmin: true,
+        lastSeen: new Date(),
+        bannedUntil: null,
+      };
+      this.users.set(bot.id, bot);
+      console.log("MemStorage: NexaBot user created:", bot.id);
+    } else {
+      console.log("MemStorage: NexaBot already exists:", existingBot.id);
+    }
+    
+    this.botInitialized = true;
+    console.log("MemStorage: NexaBot initialized successfully");
   }
 
   // Users
@@ -545,7 +577,14 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
+  private botInitialized = false;
+  
   private async initializeBotUser() {
+    if (this.botInitialized) {
+      console.log("Bot initialization already completed");
+      return;
+    }
+
     try {
       // NexaBot'un tek instance'ının olduğundan emin ol
       const existingBots = await this.db.select().from(users).where(eq(users.username, "NexaBot"));
@@ -571,6 +610,9 @@ export class PostgreSQLStorage implements IStorage {
       } else {
         console.log("NexaBot already exists:", existingBots[0].id);
       }
+      
+      this.botInitialized = true;
+      console.log("NexaBot initialized successfully");
     } catch (error) {
       console.log("Bot user initialization error:", (error as Error).message);
     }

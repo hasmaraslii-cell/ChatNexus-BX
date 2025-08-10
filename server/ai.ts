@@ -1,12 +1,12 @@
 class AIService {
   async generateResponse(prompt: string, context?: string): Promise<string> {
     try {
-      if (!process.env.GOOGLE_API_KEY) {
+      if (!process.env.GEMINI_API_KEY) {
         return "AI özelliği şu anda mevcut değil (API anahtarı eksik).";
       }
 
       // Use fetch to call Google AI directly
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,13 +39,13 @@ class AIService {
 
   async translateText(text: string, targetLang: string = "tr"): Promise<string> {
     try {
-      if (!process.env.GOOGLE_API_KEY) {
+      if (!process.env.GEMINI_API_KEY) {
         return "Çeviri özelliği şu anda mevcut değil.";
       }
 
       const prompt = `Bu metni ${targetLang === "tr" ? "Türkçe" : "İngilizce"}'ye çevir: "${text}"`;
       
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,13 +76,13 @@ class AIService {
 
   async explainTopic(topic: string): Promise<string> {
     try {
-      if (!process.env.GOOGLE_API_KEY) {
+      if (!process.env.GEMINI_API_KEY) {
         return "Açıklama özelliği şu anda mevcut değil.";
       }
 
       const prompt = `"${topic}" konusunu basit ve anlaşılır şekilde 150 kelimeyle açıkla.`;
       
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ class AIService {
 
   async generateCreativeContent(type: string, prompt: string): Promise<string> {
     try {
-      if (!process.env.GOOGLE_API_KEY) {
+      if (!process.env.GEMINI_API_KEY) {
         return "Yaratıcı içerik özelliği şu anda mevcut değil.";
       }
 
@@ -133,7 +133,7 @@ class AIService {
           systemPrompt = "Verilen konuda yaratıcı bir metin oluştur.";
       }
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
