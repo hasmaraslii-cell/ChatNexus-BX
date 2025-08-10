@@ -8,7 +8,7 @@ IBX is a real-time chat application built with a modern full-stack architecture.
 
 Preferred communication style: Simple, everyday language.
 Recent Customizations (Aug 2025):
-- **COMPLETED**: Migration from Replit Agent to standard Replit environment
+- **COMPLETED**: Migration from Replit Agent to standard Replit environment (Aug 10, 2025)
 - **COMPLETED**: Removed all voting/polling functionality from the application  
 - **COMPLETED**: Implemented image preview modal with zoom, navigation, and download
 - **COMPLETED**: Enhanced file upload system with grouped display in single messages
