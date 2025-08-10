@@ -47,6 +47,10 @@ Recent Customizations (Aug 2025):
 - **COMPLETED**: Redesigned media preview UI - moved to top, simplified design with beautiful gradients (Aug 10, 2025)
 - **COMPLETED**: Enhanced file upload button with hover tooltips and sticker support (Aug 10, 2025)
 - **COMPLETED**: Fixed NexaBot API integration with better error handling and dual key support (Aug 10, 2025)
+- **COMPLETED**: Successfully migrated from Replit Agent to standard Replit environment (Aug 10, 2025) 
+- **COMPLETED**: Simplified file upload interface - replaced complex menu with single attachment button (Aug 10, 2025)
+- **COMPLETED**: Fixed photo and image visibility in messages with proper file path resolution (Aug 10, 2025)
+- **COMPLETED**: NexaBot now properly working with Gemini API key integration (Aug 10, 2025)
 - Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
 - File upload limits: 50MB max, up to 20 files simultaneously
 - WhatsApp-style grouped file uploads to prevent spam

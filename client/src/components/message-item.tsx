@@ -537,9 +537,16 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
           <div className="bg-[var(--discord-darker)] rounded-lg p-2 max-w-md mb-3">
             <div className="relative group cursor-pointer" onClick={() => setShowImagePreview(true)}>
               <img 
-                src={message.filePath} 
+                src={message.filePath.startsWith('/api/') ? message.filePath : `/api/download/${message.filePath.split('/').pop()}`} 
                 alt={message.fileName || "Image"}
                 className="rounded-lg w-full h-auto max-h-96 object-contain transition-opacity duration-200 group-hover:opacity-80"
+                onError={(e) => {
+                  // Fallback if first attempt fails
+                  const img = e.target as HTMLImageElement;
+                  if (!img.src.includes('/api/download/')) {
+                    img.src = `/api/download/${message.filePath?.split('/').pop()}`;
+                  }
+                }}
               />
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/50 rounded-lg">
                 <Eye className="w-8 h-8 text-white" />
@@ -570,9 +577,16 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
           <div className="bg-[var(--discord-darker)] rounded-lg p-2 max-w-md mb-3">
             <div className="relative group cursor-pointer" onClick={() => setShowImagePreview(true)}>
               <img 
-                src={message.filePath} 
+                src={message.filePath.startsWith('/api/') ? message.filePath : `/api/download/${message.filePath.split('/').pop()}`} 
                 alt={message.fileName || "GIF"}
                 className="rounded-lg w-full h-auto max-h-96 object-contain transition-opacity duration-200 group-hover:opacity-80"
+                onError={(e) => {
+                  // Fallback if first attempt fails
+                  const img = e.target as HTMLImageElement;
+                  if (!img.src.includes('/api/download/')) {
+                    img.src = `/api/download/${message.filePath?.split('/').pop()}`;
+                  }
+                }}
               />
               <div className="absolute top-2 left-2 bg-[var(--discord-blurple)] text-white text-xs px-2 py-1 rounded-full font-bold">
                 GIF

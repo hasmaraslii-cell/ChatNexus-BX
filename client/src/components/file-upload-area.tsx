@@ -1,41 +1,18 @@
-import { useState, useRef } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { CloudUpload, X } from "lucide-react";
+import { Paperclip } from "lucide-react";
 
 interface FileUploadAreaProps {
   onFileUpload: (file: File) => void;
 }
 
 export default function FileUploadArea({ onFileUpload }: FileUploadAreaProps) {
-  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      onFileUpload(files[0]); // Only take first file
-    }
-  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      onFileUpload(files[0]); // Only take first file
+      onFileUpload(files[0]);
     }
   };
 
@@ -44,44 +21,22 @@ export default function FileUploadArea({ onFileUpload }: FileUploadAreaProps) {
   };
 
   return (
-    <div className="mt-3">
-      <div
-        className={`file-drop-zone p-4 border-2 border-dashed rounded-xl text-center transition-colors ${
-          dragOver 
-            ? "border-[var(--discord-blurple)] bg-[var(--discord-blurple)]/10" 
-            : "border-[var(--discord-light)]/30"
-        }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          onChange={handleFileSelect}
-          className="hidden"
-          accept="image/*,image/gif,image/webp,image/png,image/jpg,image/jpeg,video/*,video/mp4,video/webm,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar,.mp3,.wav,.ogg,.m4a,.mov,.avi,.mkv"
-          disabled={false}
-        />
-        
-        <div className="space-y-2">
-          <CloudUpload className="text-3xl text-[var(--discord-light)]/50 w-8 h-8 mx-auto" />
-          <p className="text-[var(--discord-light)]/70">
-            Dosyalarını buraya sürükle veya{" "}
-            <Button
-              type="button"
-              variant="link"
-              className="text-[var(--discord-blurple)] hover:underline p-0 h-auto"
-              onClick={handleButtonClick}
-            >
-              tıkla
-            </Button>
-          </p>
-          <p className="text-xs text-[var(--discord-light)]/50">
-            Maksimum 50MB - Resim, GIF, video, doküman desteklenir
-          </p>
-        </div>
-      </div>
-    </div>
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={handleButtonClick}
+      className="h-8 w-8 p-0 text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)]/50"
+      title="Dosya ekle"
+    >
+      <input
+        ref={fileInputRef}
+        type="file"
+        onChange={handleFileSelect}
+        className="hidden"
+        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar"
+      />
+      <Paperclip className="h-4 w-4" />
+    </Button>
   );
 }
