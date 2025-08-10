@@ -40,19 +40,25 @@ export class NexaBot {
     if (!this.botUser) await this.initializeBot();
 
     const content = message.content.trim();
+    const username = message.user?.username || "Kullanıcı";
     
     // Check for profanity filter
     if (this.containsProfanity(content)) {
-      await this.sendMessage("⚠️ Lütfen nezaket kurallarına uygun mesajlar yazın.", roomId);
+      await this.sendMessage(`⚠️ ${username}, lütfen nezaket kurallarına uygun mesajlar yazın.`, roomId);
       return;
     }
+
+    // Get room info to check if it's a DM
+    const room = await storage.getRoom(roomId);
+    const isDM = room?.name.startsWith("@");
 
     // Check if bot is mentioned (case insensitive, handle spaces in names)
     const normalizedContent = content.toLowerCase();
     const botMentions = ['nexabot', 'nexa bot', '@nexabot', '@nexa bot', 'nexa', 'nexa yapay zeka'];
     const isMentioned = botMentions.some(mention => normalizedContent.includes(mention));
     
-    if (isMentioned && !content.startsWith("!")) {
+    // In DMs, respond to all messages (except commands). In channels, only respond to mentions
+    if ((isDM && !content.startsWith("!")) || (isMentioned && !content.startsWith("!"))) {
       // Remove mention from message and respond with AI
       let cleanMessage = content;
       botMentions.forEach(mention => {
@@ -60,10 +66,10 @@ export class NexaBot {
         cleanMessage = cleanMessage.replace(regex, '').trim();
       });
       
-      if (cleanMessage.length > 0) {
-        await this.chatWithAI(cleanMessage, roomId);
+      if (cleanMessage.length > 0 || isDM) {
+        await this.chatWithAI(cleanMessage || content, roomId, username);
       } else {
-        await this.sendMessage("🤖 Merhaba! Size nasıl yardımcı olabilirim? !yardım yazarak komutları görebilirsiniz.", roomId);
+        await this.sendMessage(`🤖 Merhaba ${username}! Size nasıl yardımcı olabilirim? !yardım yazarak komutları görebilirsiniz.`, roomId);
       }
       return;
     }
@@ -694,13 +700,15 @@ ${response}`, roomId);
     }
   }
 
-  private async chatWithAI(message: string, roomId: string): Promise<void> {
+  private async chatWithAI(message: string, roomId: string, username?: string): Promise<void> {
     try {
-      const response = await aiService.generateResponse(message, "Dostane bir sohbet yapıyorsunuz.");
+      const userContext = username ? `Konuştuğun kişinin adı ${username}.` : "";
+      const response = await aiService.generateResponse(message, `Dostane bir sohbet yapıyorsunuz. ${userContext} Kullanıcıya ismiyle hitap etmeyi unutma.`);
       await this.sendMessage(`💬 ${response}`, roomId);
     } catch (error) {
       console.error("AI Chat Error:", error);
-      await this.sendMessage("Şu anda sohbet edemiyorum. Lütfen daha sonra tekrar deneyin.", roomId);
+      const errorMsg = username ? `${username}, şu anda sohbet edemiyorum. Lütfen daha sonra tekrar deneyin.` : "Şu anda sohbet edemiyorum. Lütfen daha sonra tekrar deneyin.";
+      await this.sendMessage(errorMsg, roomId);
     }
   }
 
