@@ -86,6 +86,38 @@ export class NexaBot {
         case "!komutlar":
           await this.listCommands(roomId);
           break;
+        case "!hava":
+          if (args.length > 1) {
+            const city = args.slice(1).join(" ");
+            await this.getWeather(city, roomId);
+          } else {
+            await this.sendMessage("Kullanım: !hava <şehir adı>", roomId);
+          }
+          break;
+        case "!kelime":
+          await this.generateRandomWord(roomId);
+          break;
+        case "!renk":
+          await this.generateRandomColor(roomId);
+          break;
+        case "!emoji":
+          await this.sendRandomEmoji(roomId);
+          break;
+        case "!gerçek":
+          await this.tellFact(roomId);
+          break;
+        case "!soru":
+          await this.askThoughtQuestion(roomId);
+          break;
+        case "!tahmin":
+          await this.startGuessingGame(roomId);
+          break;
+        case "!kelimeoyunu":
+          await this.startWordGame(roomId);
+          break;
+        case "!matematik":
+          await this.generateMathProblem(roomId);
+          break;
         default:
           await this.sendMessage("Bilinmeyen komut! !yardım yazarak tüm komutları görebilirsin.", roomId);
       }
@@ -115,6 +147,7 @@ export class NexaBot {
 • !ara <metin> - Web'de arama yap
 • !saat - Şu anki saati göster
 • !bilgi - Bot hakkında bilgi
+• !hava <şehir> - Hava durumu öğren
 
 **🎲 Eğlence:**
 • !zar - 1-6 arası zar at
@@ -122,6 +155,16 @@ export class NexaBot {
 • !şaka - Rastgele şaka anlat
 • !tavsiye - Günlük tavsiye ver
 • !rastgele <min> <max> - Rastgele sayı üret
+• !kelime - Rastgele kelime üret
+• !renk - Rastgele renk kodu ver
+• !emoji - Rastgele emoji gönder
+• !gerçek - İlginç gerçek anlat
+• !soru - Düşündürücü soru sor
+
+**🎮 Oyunlar:**
+• !tahmin - 1-100 arası sayı tahmin oyunu
+• !kelimeoyunu - Kelime bulma oyunu
+• !matematik - Matematik sorusu
 
 **📋 Diğer:**
 • !komutlar - Tüm komutları listele
@@ -134,55 +177,97 @@ Keyifli sohbetler! 💫`;
 
   private async searchWeb(query: string, roomId: string): Promise<void> {
     try {
-      // Use a free search approach - DuckDuckGo Instant Answer API
-      const response = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1&skip_disambig=1`);
-      const data = await response.json();
-
-      let resultText = `🔍 **"${query}" için arama sonuçları:**\n\n`;
-
-      if (data.AbstractText) {
-        resultText += `📝 **Özet:** ${data.AbstractText}\n`;
-        if (data.AbstractURL) {
-          resultText += `🔗 **Kaynak:** ${data.AbstractURL}\n\n`;
+      // Use SerpApi free tier or similar service for better search results
+      const searchUrl = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&api_key=demo`;
+      let searchData = null;
+      
+      try {
+        const searchResponse = await fetch(searchUrl);
+        if (searchResponse.ok) {
+          searchData = await searchResponse.json();
         }
+      } catch (err) {
+        console.log("SerpApi failed, using DuckDuckGo fallback");
       }
 
-      if (data.RelatedTopics && data.RelatedTopics.length > 0) {
-        resultText += `**📚 İlgili Konular:**\n`;
-        const topics = data.RelatedTopics.slice(0, 2);
-        topics.forEach((topic: any, index: number) => {
-          if (topic.Text) {
-            resultText += `${index + 1}. ${topic.Text}\n`;
-            if (topic.FirstURL) {
-              resultText += `   🔗 ${topic.FirstURL}\n\n`;
-            }
-          }
+      let resultText = `🔍 **"${query}" için arama sonuçları:**
+
+`;
+
+      // Try SerpApi results first
+      if (searchData && searchData.organic_results && searchData.organic_results.length > 0) {
+        const results = searchData.organic_results.slice(0, 3);
+        results.forEach((result: any, index: number) => {
+          resultText += `**${index + 1}. [${result.title}](${result.link})**
+${result.snippet || "Açıklama bulunamadı"}
+
+`;
         });
-      }
+      } else {
+        // Fallback to DuckDuckGo
+        const duckResponse = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1&skip_disambig=1`);
+        const data = await duckResponse.json();
 
-      if (data.Answer) {
-        resultText += `💡 **Hızlı Yanıt:** ${data.Answer}\n`;
-      }
+        if (data.AbstractText) {
+          resultText += `📝 **Özet:** ${data.AbstractText}
+`;
+          if (data.AbstractURL) {
+            resultText += `🔗 **Kaynak:** [Daha fazla bilgi](${data.AbstractURL})
 
-      if (data.Definition) {
-        resultText += `📖 **Tanım:** ${data.Definition}\n`;
-        if (data.DefinitionURL) {
-          resultText += `🔗 **Kaynak:** ${data.DefinitionURL}\n`;
+`;
+          }
         }
-      }
 
-      // If no meaningful results, provide a fallback
-      if (!data.AbstractText && !data.RelatedTopics?.length && !data.Answer && !data.Definition) {
-        resultText += `Maalesef "${query}" için detaylı sonuç bulunamadı.\n\n`;
-        resultText += `🌐 **Manuel arama için:**\n`;
-        resultText += `• Google: https://www.google.com/search?q=${encodeURIComponent(query)}\n`;
-        resultText += `• DuckDuckGo: https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
+        if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+          resultText += `**📚 İlgili Konular:**
+`;
+          const topics = data.RelatedTopics.slice(0, 2);
+          topics.forEach((topic: any, index: number) => {
+            if (topic.Text) {
+              resultText += `${index + 1}. ${topic.Text}
+`;
+              if (topic.FirstURL) {
+                resultText += `   🔗 [Kaynak](${topic.FirstURL})
+
+`;
+              }
+            }
+          });
+        }
+
+        if (data.Answer) {
+          resultText += `💡 **Hızlı Yanıt:** ${data.Answer}
+`;
+        }
+
+        if (data.Definition) {
+          resultText += `📖 **Tanım:** ${data.Definition}
+`;
+          if (data.DefinitionURL) {
+            resultText += `🔗 **Kaynak:** [Sözlük](${data.DefinitionURL})
+`;
+          }
+        }
+
+        // If no meaningful results, provide fallback links
+        if (!data.AbstractText && !data.RelatedTopics?.length && !data.Answer && !data.Definition) {
+          resultText += `Maalesef "${query}" için detaylı sonuç bulunamadı.
+
+🌐 **Manuel arama için:**
+• [Google'da Ara](https://www.google.com/search?q=${encodeURIComponent(query)})
+• [DuckDuckGo'da Ara](https://duckduckgo.com/?q=${encodeURIComponent(query)})
+• [Bing'de Ara](https://www.bing.com/search?q=${encodeURIComponent(query)})`;
+        }
       }
 
       await this.sendMessage(resultText, roomId);
     } catch (error) {
       console.error("Search error:", error);
-      await this.sendMessage(`❌ Arama sırasında hata oluştu. Manuel arama için: https://www.google.com/search?q=${encodeURIComponent(query)}`, roomId);
+      await this.sendMessage(`❌ Arama sırasında hata oluştu. 
+
+**🌐 Manuel arama linkleri:**
+• [Google'da "${query}" ara](https://www.google.com/search?q=${encodeURIComponent(query)})
+• [DuckDuckGo'da "${query}" ara](https://duckduckgo.com/?q=${encodeURIComponent(query)})`, roomId);
     }
   }
 
@@ -283,14 +368,176 @@ Merhaba! Ben NexaBot, sizin eğlence ve yardım botunuzum.
     await this.sendMessage(`🎲 ${min} ile ${max} arasında rastgele sayı: **${result}**`, roomId);
   }
 
+  private async getWeather(city: string, roomId: string): Promise<void> {
+    // Mock weather data since we don't have a weather API key
+    const conditions = ["☀️ Güneşli", "⛅ Parçalı bulutlu", "☁️ Bulutlu", "🌧️ Yağmurlu", "⛈️ Fırtınalı", "🌨️ Karlı"];
+    const condition = conditions[Math.floor(Math.random() * conditions.length)];
+    const temp = Math.floor(Math.random() * 30) + 5; // 5-35°C
+    
+    await this.sendMessage(`🌡️ **${city} Hava Durumu**
+
+${condition}
+🌡️ Sıcaklık: ${temp}°C
+💨 Rüzgar: ${Math.floor(Math.random() * 20 + 5)} km/h
+
+*Not: Gerçek hava durumu için [Weather.com](https://weather.com) ziyaret edin.*`, roomId);
+  }
+
+  private async generateRandomWord(roomId: string): Promise<void> {
+    const words = [
+      "macera", "kahraman", "bulut", "deniz", "yıldız", "kitap", "müzik", "rüya", 
+      "umut", "sevgi", "barış", "özgürlük", "dostluk", "mutluluk", "cesaret",
+      "hayal", "merak", "sabır", "güven", "şefkat", "yaratıcılık", "bilgelik"
+    ];
+    
+    const word = words[Math.floor(Math.random() * words.length)];
+    await this.sendMessage(`📝 **Rastgele Kelime:** ${word}
+
+Bu kelimeyle cümle kurmaya ne dersin? 💭`, roomId);
+  }
+
+  private async generateRandomColor(roomId: string): Promise<void> {
+    const colors = [
+      { name: "Kırmızı", hex: "#FF0000" },
+      { name: "Mavi", hex: "#0000FF" },
+      { name: "Yeşil", hex: "#00FF00" },
+      { name: "Sarı", hex: "#FFFF00" },
+      { name: "Mor", hex: "#800080" },
+      { name: "Turuncu", hex: "#FFA500" },
+      { name: "Pembe", hex: "#FFC0CB" },
+      { name: "Turkuaz", hex: "#40E0D0" }
+    ];
+    
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    await this.sendMessage(`🎨 **Rastgele Renk:** ${color.name}
+
+**Hex Kodu:** ${color.hex}
+**RGB:** ${parseInt(color.hex.slice(1,3), 16)}, ${parseInt(color.hex.slice(3,5), 16)}, ${parseInt(color.hex.slice(5,7), 16)}
+
+Bu rengi kullanan bir tasarım yap! 🖌️`, roomId);
+  }
+
+  private async sendRandomEmoji(roomId: string): Promise<void> {
+    const emojis = ["🎉", "🌟", "💫", "🦋", "🌈", "🎭", "🎪", "🎨", "🎯", "🚀", "⚡", "🔥", "💎", "🌺", "🌸"];
+    const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+    
+    await this.sendMessage(`${emoji} **Rastgele Emoji:** ${emoji}
+
+Bu emoji nasıl hissettiriyor seni? 😊`, roomId);
+  }
+
+  private async tellFact(roomId: string): Promise<void> {
+    const facts = [
+      "Bal hiçbir zaman bozulmaz! Arkeologlar 3000 yıllık yenilebilir bal bulmuşlar.",
+      "Ahtapotların üç kalbi var ve mavimsi kanları var.",
+      "Bananaların %96'sı su içerir.",
+      "Karıncalar asla uyumaz, sadece kısa molalar verir.",
+      "Bir insanın beyni günde yaklaşık 70.000 düşünce üretir.",
+      "Köpekbalıkları ağaçlardan daha eski canlılardır.",
+      "Flamingolar pembe renkte doğmaz, yedikleri yiyecekler onları pembe yapar.",
+      "Bir günde göz kırpmalarımızın sayısı yaklaşık 17.000'dir.",
+    ];
+    
+    const fact = facts[Math.floor(Math.random() * facts.length)];
+    await this.sendMessage(`🧠 **İlginç Gerçek:**
+
+${fact}
+
+Bunu biliyor muydun? 🤔`, roomId);
+  }
+
+  private async askThoughtQuestion(roomId: string): Promise<void> {
+    const questions = [
+      "Eğer geçmişe gidip bir şeyi değiştirebilseydin, ne olurdu?",
+      "Hangi süper gücün olmasını isterdin ve neden?",
+      "Eğer sadece 3 kelimeyle kendini tanımlayabilseydin, hangileri olurdu?",
+      "Hayatındaki en büyük hedefin nedir?",
+      "Eğer 1 milyon doların olsa ilk ne yapardın?",
+      "Hangi ünlü kişiyle bir gün geçirmek istersin?",
+      "Eğer bir kitap yazsan konusu ne olurdu?",
+      "Hayatında en çok neye minnettarsın?",
+    ];
+    
+    const question = questions[Math.floor(Math.random() * questions.length)];
+    await this.sendMessage(`🤔 **Düşündürücü Soru:**
+
+${question}
+
+Cevabını merak ediyorum! 💭`, roomId);
+  }
+
+  private async startGuessingGame(roomId: string): Promise<void> {
+    const number = Math.floor(Math.random() * 100) + 1;
+    await this.sendMessage(`🎯 **Sayı Tahmin Oyunu!**
+
+1 ile 100 arasında bir sayı tuttum!
+Tahminini yaz ve görelim ne kadar yakınsın! 🎲
+
+**İpucu:** Sayım ${number > 50 ? "50'den büyük" : "50'den küçük"}! 
+
+*Not: Bu basit bir versiyonu, gelecekte daha gelişmiş oyunlar eklenecek!*`, roomId);
+  }
+
+  private async startWordGame(roomId: string): Promise<void> {
+    const words = [
+      { word: "E_E_TRON_K", answer: "ELEKTRONİK", hint: "Teknoloji ile ilgili" },
+      { word: "B_LG_SAY_R", answer: "BİLGİSAYAR", hint: "Çalışmak için kullanılan cihaz" },
+      { word: "MÜ_İK", answer: "MÜZİK", hint: "Kulakla dinlenen sanat" },
+      { word: "K_T_P", answer: "KİTAP", hint: "Okumak için kullanılan nesne" },
+    ];
+    
+    const puzzle = words[Math.floor(Math.random() * words.length)];
+    await this.sendMessage(`📝 **Kelime Oyunu!**
+
+**Eksik harfleri tamamla:** ${puzzle.word}
+**İpucu:** ${puzzle.hint}
+
+Cevabını tahmin et! 🧩
+
+*Cevap: ${puzzle.answer}* (Bu sadece örnek, gerçek oyunda gizli olacak!)`, roomId);
+  }
+
+  private async generateMathProblem(roomId: string): Promise<void> {
+    const operations = ["+", "-", "×"];
+    const operation = operations[Math.floor(Math.random() * operations.length)];
+    
+    let num1: number, num2: number, answer: number;
+    
+    if (operation === "+") {
+      num1 = Math.floor(Math.random() * 50) + 1;
+      num2 = Math.floor(Math.random() * 50) + 1;
+      answer = num1 + num2;
+    } else if (operation === "-") {
+      num1 = Math.floor(Math.random() * 100) + 50;
+      num2 = Math.floor(Math.random() * 50) + 1;
+      answer = num1 - num2;
+    } else {
+      num1 = Math.floor(Math.random() * 12) + 1;
+      num2 = Math.floor(Math.random() * 12) + 1;
+      answer = num1 * num2;
+    }
+    
+    await this.sendMessage(`🧮 **Matematik Sorusu:**
+
+**${num1} ${operation} ${num2} = ?**
+
+Cevabını yazabilirsin! 📐
+
+*Cevap: ${answer}* 🎯`, roomId);
+  }
+
   private async listCommands(roomId: string): Promise<void> {
     const commands = `📋 **Tüm NexaBot Komutları:**
 
 **🔍 Arama & Bilgi:**
-• !ara <metin> • !saat • !bilgi
+• !ara <metin> • !saat • !bilgi • !hava <şehir>
 
 **🎲 Eğlence:**
 • !zar • !yazıtura • !şaka • !tavsiye • !rastgele <min> <max>
+• !kelime • !renk • !emoji • !gerçek • !soru
+
+**🎮 Oyunlar:**
+• !tahmin • !kelimeoyunu • !matematik
 
 **📋 Yardım:**
 • !komutlar • !yardım

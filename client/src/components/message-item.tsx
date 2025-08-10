@@ -197,56 +197,147 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
     }
   };
 
-  const renderContentWithLinks = (content: string) => {
-    // Enhanced URL regex for better link detection - includes .com, .org, etc.
+  const renderContentWithMarkdown = (content: string) => {
+    // Regex patterns for different markdown elements
+    const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
     const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]+|(?:www\.)?[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.(?:com|org|net|edu|gov|mil|int|co|io|ly|me|app|dev|tech|info|biz|name|pro|tv|cc|us|uk|de|fr|jp|cn|in|au|ca|br|ru|it|es|nl|se|no|dk|fi|pl|cz|sk|hu|hr|rs|bg|ro|gr|tr|il|ae|sa|eg|za|ng|ke|ma|gh|tn|dz|ly|sd|et|ug|rw|tz|mw|zm|zw|bw|na|sz|ls|mz|mg|mu|sc|km|dj|so|er|cf|td|cm|gq|ga|cg|cd|ao|st|gw|gn|sl|lr|ci|gh|bf|ml|ne|sn|gm|gw|cv|mr|eh)\b[^\s<>"{}|\\^`[\]]*)/gi;
+    const boldRegex = /\*\*(.*?)\*\*/g;
+    const italicRegex = /\*(.*?)\*/g;
     const mentionRegex = /@(\w+)/g;
+    const lineBreakRegex = /\n/g;
     
     const elements: React.ReactNode[] = [];
+    let remainingContent = content;
+    let keyCounter = 0;
     
-    // Split by URLs first
-    const urlSplits = content.split(urlRegex);
+    // Process line breaks first - split by newlines
+    const lines = remainingContent.split('\n');
     
-    urlSplits.forEach((segment, segmentIndex) => {
-      if (urlRegex.test(segment)) {
-        // This is a URL - ensure it has protocol
-        const href = segment.startsWith('http') ? segment : `https://${segment}`;
-        elements.push(
-          <a
-            key={`url-${segmentIndex}`}
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[var(--discord-blurple)] hover:text-[var(--discord-blurple)]/80 hover:underline break-all inline-block font-medium transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {segment}
-          </a>
-        );
-      } else {
-        // Process mentions in non-URL segments
-        const mentionSplits = segment.split(mentionRegex);
-        mentionSplits.forEach((part, partIndex) => {
-          if (partIndex % 2 === 1) {
-            // This is a mention (odd indices after split)
-            elements.push(
-              <span
-                key={`mention-${segmentIndex}-${partIndex}`}
-                className="bg-[var(--discord-blurple)]/20 text-[var(--discord-blurple)] px-1.5 py-0.5 rounded-md text-sm font-semibold hover:bg-[var(--discord-blurple)]/30 transition-colors cursor-pointer"
-              >
-                @{part}
-              </span>
-            );
-          } else if (part) {
-            // Regular text
-            elements.push(
-              <span key={`text-${segmentIndex}-${partIndex}`}>
-                {part}
+    lines.forEach((line, lineIndex) => {
+      if (lineIndex > 0) {
+        elements.push(<br key={`br-${keyCounter++}`} />);
+      }
+      
+      let currentLine = line;
+      const lineElements: React.ReactNode[] = [];
+      
+      // Process markdown links first [text](url)
+      const markdownMatches = Array.from(currentLine.matchAll(markdownLinkRegex));
+      if (markdownMatches.length > 0) {
+        let lastIndex = 0;
+        markdownMatches.forEach((match, matchIndex) => {
+          // Add text before the link
+          if (match.index! > lastIndex) {
+            lineElements.push(
+              <span key={`text-before-${keyCounter++}`}>
+                {currentLine.slice(lastIndex, match.index)}
               </span>
             );
           }
+          
+          // Add the markdown link
+          const linkText = match[1];
+          const linkUrl = match[2].startsWith('http') ? match[2] : `https://${match[2]}`;
+          lineElements.push(
+            <a
+              key={`markdown-link-${keyCounter++}`}
+              href={linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--discord-blurple)] hover:text-[var(--discord-blurple)]/80 hover:underline font-medium transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {linkText}
+            </a>
+          );
+          
+          lastIndex = match.index! + match[0].length;
+        });
+        
+        // Add remaining text
+        if (lastIndex < currentLine.length) {
+          currentLine = currentLine.slice(lastIndex);
+        } else {
+          currentLine = '';
+        }
+      }
+      
+      if (currentLine) {
+        // Process regular URLs
+        const urlSplits = currentLine.split(urlRegex);
+        urlSplits.forEach((segment, segmentIndex) => {
+          if (urlRegex.test(segment)) {
+            const href = segment.startsWith('http') ? segment : `https://${segment}`;
+            lineElements.push(
+              <a
+                key={`url-${keyCounter++}`}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--discord-blurple)] hover:text-[var(--discord-blurple)]/80 hover:underline break-all inline-block font-medium transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {segment}
+              </a>
+            );
+          } else if (segment) {
+            // Process bold, italic, and mentions in text segments
+            let processedSegment = segment;
+            const textElements: React.ReactNode[] = [];
+            
+            // Split by bold first
+            const boldSplits = processedSegment.split(boldRegex);
+            boldSplits.forEach((boldPart, boldIndex) => {
+              if (boldIndex % 2 === 1) {
+                // This is bold text
+                textElements.push(
+                  <strong key={`bold-${keyCounter++}`} className="font-bold">
+                    {boldPart}
+                  </strong>
+                );
+              } else if (boldPart) {
+                // Process italic and mentions in non-bold text
+                const italicSplits = boldPart.split(italicRegex);
+                italicSplits.forEach((italicPart, italicIndex) => {
+                  if (italicIndex % 2 === 1) {
+                    // This is italic text
+                    textElements.push(
+                      <em key={`italic-${keyCounter++}`} className="italic">
+                        {italicPart}
+                      </em>
+                    );
+                  } else if (italicPart) {
+                    // Process mentions in regular text
+                    const mentionSplits = italicPart.split(mentionRegex);
+                    mentionSplits.forEach((mentionPart, mentionIndex) => {
+                      if (mentionIndex % 2 === 1) {
+                        textElements.push(
+                          <span
+                            key={`mention-${keyCounter++}`}
+                            className="bg-[var(--discord-blurple)]/20 text-[var(--discord-blurple)] px-1.5 py-0.5 rounded-md text-sm font-semibold hover:bg-[var(--discord-blurple)]/30 transition-colors cursor-pointer"
+                          >
+                            @{mentionPart}
+                          </span>
+                        );
+                      } else if (mentionPart) {
+                        textElements.push(
+                          <span key={`text-${keyCounter++}`}>
+                            {mentionPart}
+                          </span>
+                        );
+                      }
+                    });
+                  }
+                });
+              }
+            });
+            
+            lineElements.push(...textElements);
+          }
         });
       }
+      
+      elements.push(...lineElements);
     });
     
     return elements;
