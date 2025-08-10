@@ -1,5 +1,6 @@
 import { type User, type InsertUser, type Room, type InsertRoom, type Message, type InsertMessage, type MessageWithUser, type RoomWithMessageCount, type TypingIndicator, users, rooms, messages, reactions } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { botManager } from "./bot-manager";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, and, desc, inArray, sql } from "drizzle-orm";
@@ -55,8 +56,6 @@ export class MemStorage implements IStorage {
   private rooms: Map<string, Room>;
   private messages: Map<string, Message>;
   private typingIndicators: Map<string, TypingIndicator>;
-  private botInitialized = false;
-
   constructor() {
     this.users = new Map();
     this.rooms = new Map();
@@ -66,8 +65,8 @@ export class MemStorage implements IStorage {
     // Initialize default rooms
     this.initializeDefaultRooms();
     
-    // Initialize NexaBot
-    this.initializeBotUser();
+    // Initialize NexaBot using bot manager to prevent duplicates
+    botManager.ensureBotInitialized(() => this.createBotUser());
     
     // Clean up old typing indicators every 10 seconds
     setInterval(() => this.cleanupOldTypingIndicators(), 10000);
@@ -100,32 +99,25 @@ export class MemStorage implements IStorage {
     }
   }
 
-  private initializeBotUser() {
-    if (this.botInitialized) {
-      console.log("MemStorage: Bot initialization already completed");
+  private async createBotUser(): Promise<void> {
+    // Check if NexaBot already exists
+    const existingBot = Array.from(this.users.values()).find(user => user.username === "NexaBot");
+    if (existingBot) {
+      console.log("MemStorage: NexaBot already exists:", existingBot.id);
       return;
     }
 
-    // NexaBot'u oluştur (sadece bir kez)
-    const existingBot = Array.from(this.users.values()).find(user => user.username === "NexaBot");
-    if (!existingBot) {
-      const bot: User = {
-        id: randomUUID(),
-        username: "NexaBot",
-        profileImage: "https://i.imgur.com/2FDBAwR.png",
-        status: "online",
-        isAdmin: true,
-        lastSeen: new Date(),
-        bannedUntil: null,
-      };
-      this.users.set(bot.id, bot);
-      console.log("MemStorage: NexaBot user created:", bot.id);
-    } else {
-      console.log("MemStorage: NexaBot already exists:", existingBot.id);
-    }
-    
-    this.botInitialized = true;
-    console.log("MemStorage: NexaBot initialized successfully");
+    const bot: User = {
+      id: randomUUID(),
+      username: "NexaBot",
+      profileImage: "https://i.imgur.com/2FDBAwR.png",
+      status: "online",
+      isAdmin: true,
+      lastSeen: new Date(),
+      bannedUntil: null,
+    };
+    this.users.set(bot.id, bot);
+    console.log("MemStorage: NexaBot user created:", bot.id);
   }
 
   // Users
@@ -545,7 +537,8 @@ export class PostgreSQLStorage implements IStorage {
     
     // Initialize default rooms and bot
     this.initializeDefaultRooms();
-    this.initializeBotUser();
+    // Use bot manager to prevent duplicates
+    botManager.ensureBotInitialized(() => this.createBotUser());
     
     // Clean up old typing indicators every 10 seconds
     setInterval(() => this.cleanupOldTypingIndicators(), 10000);
@@ -577,44 +570,35 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
-  private botInitialized = false;
-  
-  private async initializeBotUser() {
-    if (this.botInitialized) {
-      console.log("Bot initialization already completed");
-      return;
-    }
-
+  private async createBotUser(): Promise<void> {
     try {
-      // NexaBot'un tek instance'ının olduğundan emin ol
+      // Check if NexaBot already exists
       const existingBots = await this.db.select().from(users).where(eq(users.username, "NexaBot"));
       
       if (existingBots.length === 0) {
-        // Hiç NexaBot yoksa oluştur
+        // Create NexaBot if it doesn't exist
         const botUser = {
           username: "NexaBot",
-          profileImage: "https://i.imgur.com/2FDBAwR.png", // Orijinal logo
+          profileImage: "https://i.imgur.com/2FDBAwR.png",
           status: "online"
         };
         
         const bot = await this.createUser(botUser);
-        console.log("NexaBot user created:", bot.id);
+        console.log("PostgreSQL: NexaBot user created:", bot.id);
       } else if (existingBots.length > 1) {
-        // Birden fazla varsa, en eskisini tut diğerlerini sil
+        // Remove duplicates, keep the first one
         const keepBot = existingBots[0];
         for (let i = 1; i < existingBots.length; i++) {
           await this.db.delete(users).where(eq(users.id, existingBots[i].id));
-          console.log(`Duplicate NexaBot removed: ${existingBots[i].id}`);
+          console.log(`PostgreSQL: Duplicate NexaBot removed: ${existingBots[i].id}`);
         }
-        console.log(`Kept original NexaBot: ${keepBot.id}`);
+        console.log(`PostgreSQL: Kept original NexaBot: ${keepBot.id}`);
       } else {
-        console.log("NexaBot already exists:", existingBots[0].id);
+        console.log("PostgreSQL: NexaBot already exists:", existingBots[0].id);
       }
-      
-      this.botInitialized = true;
-      console.log("NexaBot initialized successfully");
     } catch (error) {
-      console.log("Bot user initialization error:", (error as Error).message);
+      console.log("PostgreSQL: Bot user creation error:", (error as Error).message);
+      throw error;
     }
   }
 
