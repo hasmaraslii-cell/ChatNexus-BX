@@ -1,0 +1,39 @@
+{
+  "name": "IBX Chat",
+  "short_name": "IBX",
+  "description": "Real-time chat application with GIF support",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#36393f",
+  "theme_color": "#5865f2",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "file",
+          "accept": ["image/*", "image/gif", "image/webp", "image/png", "image/jpeg", "video/*", "audio/*"]
+        }
+      ]
+    }
+  },
+  "file_handlers": [
+    {
+      "action": "/",
+      "accept": {
+        "image/*": [".gif", ".png", ".jpg", ".jpeg", ".webp"],
+        "video/*": [".mp4", ".webm", ".mov"],
+        "audio/*": [".mp3", ".wav", ".ogg"]
+      }
+    }
+  ]
+}

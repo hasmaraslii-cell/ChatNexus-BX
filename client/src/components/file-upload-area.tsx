@@ -60,7 +60,7 @@ export default function FileUploadArea({ onFileUpload }: FileUploadAreaProps) {
           type="file"
           onChange={handleFileSelect}
           className="hidden"
-          accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar,.mp3,.wav,.ogg,.m4a,.mp4,.mov,.avi,.mkv,.webm"
+          accept="image/*,image/gif,image/webp,image/png,image/jpg,image/jpeg,video/*,video/mp4,video/webm,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar,.mp3,.wav,.ogg,.m4a,.mov,.avi,.mkv"
           disabled={false}
         />
         

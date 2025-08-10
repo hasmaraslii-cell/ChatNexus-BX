@@ -685,7 +685,21 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
               
 
               
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 relative">
+                {/* Hidden file input for mobile keyboards to detect */}
+                <input 
+                  type="file"
+                  accept="image/*,image/gif,image/webp,image/png,image/jpeg,video/*"
+                  multiple={false}
+                  className="absolute inset-0 w-full h-full opacity-0 pointer-events-none z-[-1]"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleFileUpload(e.target.files[0]);
+                    }
+                  }}
+                  aria-hidden="true"
+                  tabIndex={-1}
+                />
                 <Textarea
                   ref={textareaRef}
                   value={message}
@@ -694,11 +708,15 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
                   onPaste={handlePaste}
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
-                  className="w-full bg-transparent text-[var(--discord-light)] placeholder:text-[var(--discord-light)]/50 resize-none border-none focus:ring-0 focus:outline-none min-h-0 p-0 text-sm md:text-base"
+                  className="w-full bg-transparent text-[var(--discord-light)] placeholder:text-[var(--discord-light)]/50 resize-none border-none focus:ring-0 focus:outline-none min-h-0 p-0 text-sm md:text-base relative z-10"
                   placeholder={replyToMessage ? `${replyToMessage.user.username} kullanıcısına yanıt ver... (Ctrl+Enter: gönder)` : (currentRoom.isDM ? `@${currentRoom.name} kişisine mesaj gönder (Ctrl+Enter: gönder)` : `#${currentRoom.name} kanalına mesaj gönder (Ctrl+Enter: gönder)`)}
                   rows={1}
                   disabled={sendMessageMutation.isPending}
                   data-testid="textarea-message-input"
+                  // Mobile keyboard GIF support attributes
+                  inputMode="text"
+                  data-accept="image/*,image/gif,image/webp,video/*"
+                  data-capture="environment"
                 />
               </div>
 
