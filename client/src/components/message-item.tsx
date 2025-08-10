@@ -524,8 +524,8 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
                 </div>
               </div>
             ) : (
-              <p className="text-[var(--discord-light)] leading-relaxed">
-                {renderContentWithLinks(message.content)}
+              <p className="text-[var(--discord-light)] leading-relaxed whitespace-pre-wrap">
+                {renderContentWithMarkdown(message.content)}
               </p>
             )}
           </div>
