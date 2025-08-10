@@ -43,6 +43,11 @@ export interface IStorage {
   createDMRoom(user1Id: string, user2Id: string): Promise<Room>;
   getDMRoom(user1Id: string, user2Id: string): Promise<Room | null>;
   getUserDMRooms(userId: string): Promise<Room[]>;
+  addUserToDMRoom(roomId: string, userId: string): Promise<boolean>;
+  removeUserFromDMRoom(roomId: string, userId: string): Promise<boolean>;
+  
+  // Message cleanup
+  deleteOldMessages(): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -62,6 +67,9 @@ export class MemStorage implements IStorage {
     
     // Clean up old typing indicators every 10 seconds
     setInterval(() => this.cleanupOldTypingIndicators(), 10000);
+    
+    // Clean up old messages every 24 hours
+    setInterval(() => this.deleteOldMessages(), 24 * 60 * 60 * 1000);
   }
 
   private async initializeDefaultRooms() {
@@ -442,6 +450,52 @@ export class MemStorage implements IStorage {
       room.participants.includes(userId)
     );
   }
+
+  async addUserToDMRoom(roomId: string, userId: string): Promise<boolean> {
+    const room = this.rooms.get(roomId);
+    if (room && room.isDM && room.participants) {
+      if (!room.participants.includes(userId) && room.participants.length < 4) {
+        const updatedRoom = { 
+          ...room, 
+          participants: [...room.participants, userId]
+        };
+        this.rooms.set(roomId, updatedRoom);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async removeUserFromDMRoom(roomId: string, userId: string): Promise<boolean> {
+    const room = this.rooms.get(roomId);
+    if (room && room.isDM && room.participants) {
+      const updatedParticipants = room.participants.filter(id => id !== userId);
+      if (updatedParticipants.length >= 2) {
+        const updatedRoom = { 
+          ...room, 
+          participants: updatedParticipants
+        };
+        this.rooms.set(roomId, updatedRoom);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async deleteOldMessages(): Promise<number> {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    let deletedCount = 0;
+    
+    for (const [messageId, message] of Array.from(this.messages.entries())) {
+      if (message.createdAt && message.createdAt < twentyFourHoursAgo) {
+        this.messages.delete(messageId);
+        deletedCount++;
+      }
+    }
+    
+    console.log(`24 saatlik temizlik: ${deletedCount} mesaj silindi`);
+    return deletedCount;
+  }
 }
 
 export class PostgreSQLStorage implements IStorage {
@@ -463,6 +517,9 @@ export class PostgreSQLStorage implements IStorage {
     
     // Clean up old typing indicators every 10 seconds
     setInterval(() => this.cleanupOldTypingIndicators(), 10000);
+    
+    // Clean up old messages every 24 hours
+    setInterval(() => this.deleteOldMessages(), 24 * 60 * 60 * 1000);
   }
 
   private async initializeDefaultRooms() {
@@ -633,7 +690,7 @@ export class PostgreSQLStorage implements IStorage {
     
     // NexaBot'u her zaman online olarak göster
     const nexaBot = await this.getUserByUsername("NexaBot");
-    if (nexaBot && !onlineUsers.find(user => user.username === "NexaBot")) {
+    if (nexaBot && !onlineUsers.find((user: User) => user.username === "NexaBot")) {
       // NexaBot'u online yap ve listeye ekle
       await this.updateUserStatus(nexaBot.id, "online");
       onlineUsers.push({ ...nexaBot, status: "online" });
@@ -853,6 +910,59 @@ export class PostgreSQLStorage implements IStorage {
       room.participants && 
       room.participants.includes(userId)
     );
+  }
+
+  async addUserToDMRoom(roomId: string, userId: string): Promise<boolean> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (room && room.isDM && room.participants) {
+        if (!room.participants.includes(userId) && room.participants.length < 4) {
+          const updatedParticipants = [...room.participants, userId];
+          await this.db.update(rooms)
+            .set({ participants: updatedParticipants })
+            .where(eq(rooms.id, roomId));
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Error adding user to DM room:', error);
+      return false;
+    }
+  }
+
+  async removeUserFromDMRoom(roomId: string, userId: string): Promise<boolean> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (room && room.isDM && room.participants) {
+        const updatedParticipants = room.participants.filter(id => id !== userId);
+        if (updatedParticipants.length >= 2) {
+          await this.db.update(rooms)
+            .set({ participants: updatedParticipants })
+            .where(eq(rooms.id, roomId));
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Error removing user from DM room:', error);
+      return false;
+    }
+  }
+
+  async deleteOldMessages(): Promise<number> {
+    try {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const result = await this.db.delete(messages)
+        .where(sql`${messages.createdAt} < ${twentyFourHoursAgo}`);
+      
+      const deletedCount = result.rowCount || 0;
+      console.log(`24 saatlik temizlik: ${deletedCount} mesaj silindi`);
+      return deletedCount;
+    } catch (error) {
+      console.error('Error deleting old messages:', error);
+      return 0;
+    }
   }
 }
 

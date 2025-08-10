@@ -31,6 +31,9 @@ Recent Customizations (Aug 2025):
 - **COMPLETED**: Added AI integration to NexaBot using Gemini API with smart chat capabilities
 - **COMPLETED**: Fixed NexaBot API configuration and improved user addressing (Aug 10, 2025)
 - **COMPLETED**: Fixed AI service using direct Google API calls - NexaBot now works perfectly (Aug 10, 2025)
+- **COMPLETED**: Added group DM functionality with user tagging to add +2 participants (max 4 total) (Aug 10, 2025)
+- **COMPLETED**: Implemented 24-hour automatic message cleanup system (Aug 10, 2025)
+- **COMPLETED**: NexaBot now always appears online automatically (Aug 10, 2025)
 - **COMPLETED**: Added mobile GIF keyboard support with paste/drop functionality (Aug 10, 2025)
 - **COMPLETED**: Enhanced AI mention detection (responds to "Nexa", "NexaBot", "nexa yapay zeka")  
 - **COMPLETED**: Improved keyboard controls (Enter for new line, Ctrl+Enter to send)
@@ -86,6 +89,8 @@ Recent Customizations (Aug 2025):
 - **Message Polling**: Client-side polling every 3 seconds for new messages
 - **User Presence**: Periodic updates every 10 seconds for online user status
 - **Live Updates**: Automatic UI updates when new messages arrive or users come online
+- **Message Cleanup**: Automatic deletion of messages older than 24 hours
+- **Group DMs**: Support for adding up to 2 additional users to DM conversations via tagging
 
 ### File Upload System
 - **Supported Types**: Images, videos, documents, and archives with MIME type validation

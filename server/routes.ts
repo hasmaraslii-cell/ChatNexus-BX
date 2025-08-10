@@ -581,6 +581,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DM'e kullanıcı ekleme (@etiketleme ile +2 kullanıcı)
+  app.post("/api/dm/:roomId/add-user", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { userId, adderId } = req.body;
+      
+      if (!userId || !adderId) {
+        return res.status(400).json({ message: "Kullanıcı ID'si ve ekleyen ID'si gerekli" });
+      }
+      
+      // Ekleyen kişi DM'in katılımcısı mı kontrol et
+      const room = await storage.getRoom(roomId);
+      if (!room || !room.isDM || !room.participants?.includes(adderId)) {
+        return res.status(403).json({ message: "Bu DM'e kullanıcı ekleme yetkiniz yok" });
+      }
+      
+      // Kullanıcı var mı kontrol et
+      const userToAdd = await storage.getUser(userId);
+      if (!userToAdd) {
+        return res.status(404).json({ message: "Eklenecek kullanıcı bulunamadı" });
+      }
+      
+      const success = await storage.addUserToDMRoom(roomId, userId);
+      if (success) {
+        // Sistem mesajı gönder
+        const adder = await storage.getUser(adderId);
+        await storage.createMessage({
+          roomId,
+          userId: adderId,
+          content: `@${userToAdd.username} DM grubuna eklendi`,
+          messageType: "system"
+        });
+        
+        res.json({ message: `${userToAdd.username} DM'e eklendi`, success: true });
+      } else {
+        res.status(400).json({ message: "Kullanıcı eklenemedi (zaten DM'de veya maksimum 4 kişi sınırı)" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Kullanıcı DM'e eklenemedi" });
+    }
+  });
+
+  // DM'den kullanıcı çıkarma
+  app.post("/api/dm/:roomId/remove-user", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { userId, removerId } = req.body;
+      
+      if (!userId || !removerId) {
+        return res.status(400).json({ message: "Kullanıcı ID'si ve çıkaran ID'si gerekli" });
+      }
+      
+      // Çıkaran kişi DM'in katılımcısı mı kontrol et
+      const room = await storage.getRoom(roomId);
+      if (!room || !room.isDM || !room.participants?.includes(removerId)) {
+        return res.status(403).json({ message: "Bu DM'den kullanıcı çıkarma yetkiniz yok" });
+      }
+      
+      const success = await storage.removeUserFromDMRoom(roomId, userId);
+      if (success) {
+        // Sistem mesajı gönder
+        const userToRemove = await storage.getUser(userId);
+        await storage.createMessage({
+          roomId,
+          userId: removerId,
+          content: `@${userToRemove?.username || 'Kullanıcı'} DM grubundan çıkarıldı`,
+          messageType: "system"
+        });
+        
+        res.json({ message: "Kullanıcı DM'den çıkarıldı", success: true });
+      } else {
+        res.status(400).json({ message: "Kullanıcı çıkarılamadı (minimum 2 kişi gerekli)" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Kullanıcı DM'den çıkarılamadı" });
+    }
+  });
+
+  // 24 saatlik mesaj temizleme endpoint (manuel tetikleme için)
+  app.post("/api/admin/cleanup-messages", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      
+      // Admin kontrolü (isteğe bağlı)
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Sadece yöneticiler mesaj temizleyebilir" });
+      }
+      
+      const deletedCount = await storage.deleteOldMessages();
+      res.json({ message: `${deletedCount} eski mesaj silindi`, deletedCount });
+    } catch (error) {
+      res.status(500).json({ message: "Mesaj temizliği başarısız" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
