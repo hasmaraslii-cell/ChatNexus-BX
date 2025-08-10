@@ -43,6 +43,10 @@ Recent Customizations (Aug 2025):
 - **COMPLETED**: Extended file support to all types: images, videos, documents, archives, audio files (Aug 10, 2025)
 - **COMPLETED**: Enhanced media preview with file type icons and horizontal scrolling (Aug 10, 2025)
 - **COMPLETED**: Removed overly aggressive NexaBot profanity filter that was incorrectly flagging messages (Aug 10, 2025)
+- **COMPLETED**: Fixed photo visibility and click-to-enlarge functionality with new attachments format (Aug 10, 2025)
+- **COMPLETED**: Redesigned media preview UI - moved to top, simplified design with beautiful gradients (Aug 10, 2025)
+- **COMPLETED**: Enhanced file upload button with hover tooltips and sticker support (Aug 10, 2025)
+- **COMPLETED**: Fixed NexaBot API integration with better error handling and dual key support (Aug 10, 2025)
 - Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
 - File upload limits: 50MB max, up to 20 files simultaneously
 - WhatsApp-style grouped file uploads to prevent spam

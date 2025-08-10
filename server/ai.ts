@@ -1,12 +1,14 @@
 class AIService {
   async generateResponse(prompt: string, context?: string): Promise<string> {
     try {
-      if (!process.env.GEMINI_API_KEY) {
+      const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+      if (!apiKey) {
+        console.error("Missing GEMINI_API_KEY or GOOGLE_API_KEY");
         return "AI özelliği şu anda mevcut değil (API anahtarı eksik).";
       }
 
       // Use fetch to call Google AI directly
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -21,7 +23,9 @@ class AIService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Gemini API Error: ${response.status} - ${errorText}`);
+        throw new Error(`API hatası: ${response.status}`);
       }
 
       const data = await response.json();
@@ -39,7 +43,8 @@ class AIService {
 
   async translateText(text: string, targetLang: string = "tr"): Promise<string> {
     try {
-      if (!process.env.GEMINI_API_KEY) {
+      const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+      if (!apiKey) {
         return "Çeviri özelliği şu anda mevcut değil.";
       }
 

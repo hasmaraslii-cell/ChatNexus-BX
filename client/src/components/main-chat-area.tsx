@@ -864,19 +864,19 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
               </Button>
             </form>
           </div>
-          
-          {/* File Upload Area */}
-          {showFileUpload && (
-            <FileUploadArea onFileUpload={handleFileUpload} />
-          )}
-          
-          {/* Media Preview Component */}
-          <MediaPreview
-            mediaFiles={selectedMedia}
-            onRemove={removeMediaFile}
-            onClear={clearAllMedia}
-          />
         </div>
+        
+        {/* Media Preview Component - NOW AT TOP */}
+        <MediaPreview
+          mediaFiles={selectedMedia}
+          onRemove={removeMediaFile}
+          onClear={clearAllMedia}
+        />
+        
+        {/* File Upload Area */}
+        {showFileUpload && (
+          <FileUploadArea onFileUpload={handleFileUpload} />
+        )}
       </div>
 
 
