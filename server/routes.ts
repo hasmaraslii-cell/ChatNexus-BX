@@ -6,6 +6,7 @@ import path from "path";
 import { storage } from "./storage";
 import { insertUserSchema, insertMessageSchema, insertRoomSchema } from "@shared/schema";
 import { z } from "zod";
+import { nexaBot } from "./nexabot";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -333,6 +334,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const message = await storage.createMessage(messageData);
       const messageWithUser = { ...message, user };
+      
+      // Process message for bot commands
+      await nexaBot.processMessage(messageWithUser, messageData.roomId);
+      
       res.json(messageWithUser);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Mesaj gönderilemedi" });

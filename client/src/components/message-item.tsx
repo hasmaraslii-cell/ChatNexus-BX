@@ -326,7 +326,7 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
   return (
     <div 
       ref={messageRef}
-      className="message-group flex items-start space-x-3 p-2 rounded-lg transition-all duration-200 group hover:bg-gray-100 dark:hover:bg-[var(--discord-dark)]/40"
+      className="message-group flex items-start space-x-3 p-2 rounded-lg transition-all duration-200 group hover:bg-[var(--discord-dark)]/30 dark:hover:bg-[var(--discord-dark)]/30"
       style={{ transform: `translateX(${swipeDistance}px)` }}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}

@@ -137,9 +137,12 @@ export default function RoomSidebar({
                       }`}
                       onClick={() => onRoomChange(room)}
                     >
-                      <MessageCircle className={`text-sm mr-2 w-4 h-4 transition-colors ${
-                        isActive ? "text-[var(--discord-light)]" : "text-[var(--discord-light)]/50 group-hover:text-[var(--discord-light)]/70"
-                      }`} />
+                      {/* Show profile picture for DM instead of icon */}
+                      <div className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mr-2 overflow-hidden">
+                        <span className="text-white text-xs font-bold">
+                          {getDMDisplayName(room).charAt(0).toUpperCase()}
+                        </span>
+                      </div>
                       <span className="flex-1 text-left font-medium">
                         {getDMDisplayName(room)}
                       </span>

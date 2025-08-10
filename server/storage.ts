@@ -553,7 +553,39 @@ export class PostgreSQLStorage implements IStorage {
       .set(updateData)
       .where(eq(users.id, id))
       .returning();
+      
+    // Update DM room names when username changes
+    if (result[0]) {
+      await this.updateDMRoomNames(id, username);
+    }
+    
     return result[0];
+  }
+
+  private async updateDMRoomNames(userId: string, newUsername: string): Promise<void> {
+    try {
+      const dmRooms = await this.db.select().from(rooms)
+        .where(eq(rooms.isDM, true));
+      
+      for (const room of dmRooms) {
+        if (room.participants && room.participants.includes(userId)) {
+          // Get all participant usernames
+          const participantUsers = await Promise.all(
+            room.participants.map(id => this.getUser(id))
+          );
+          
+          const validUsers = participantUsers.filter(user => user !== undefined);
+          const usernames = validUsers.map(user => user!.username);
+          
+          const newRoomName = usernames.join(', ');
+          await this.db.update(rooms)
+            .set({ name: newRoomName })
+            .where(eq(rooms.id, room.id));
+        }
+      }
+    } catch (error) {
+      console.error('Error updating DM room names:', error);
+    }
   }
 
   async banUser(id: string, bannedUntil: Date | null): Promise<User | undefined> {

@@ -21,6 +21,9 @@ Recent Customizations (Aug 2025):
 - **COMPLETED**: Added mobile touch zoom and pan features for image preview
 - **COMPLETED**: Removed non-functional permissions modal
 - **COMPLETED**: Added notification system for new messages
+- **COMPLETED**: Fixed dark theme message hover effects (white hitbox issue resolved)
+- **COMPLETED**: Added NexaBot with entertainment commands and free web search functionality
+- **COMPLETED**: Fixed DM profile pictures and username updating issues
 - Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
 - File upload limits: 50MB max, up to 20 files simultaneously
 - WhatsApp-style grouped file uploads to prevent spam
