@@ -446,8 +446,9 @@ export class PostgreSQLStorage implements IStorage {
     this.db = drizzle(sql);
     this.typingIndicators = new Map();
     
-    // Initialize default rooms
+    // Initialize default rooms and bot
     this.initializeDefaultRooms();
+    this.initializeBotUser();
     
     // Clean up old typing indicators every 10 seconds
     setInterval(() => this.cleanupOldTypingIndicators(), 10000);
@@ -473,6 +474,25 @@ export class PostgreSQLStorage implements IStorage {
           participants: []
         });
       }
+    }
+  }
+
+  private async initializeBotUser() {
+    try {
+      // Create NexaBot user for production deployment
+      const existingBot = await this.getUserByUsername("NexaBot");
+      if (!existingBot) {
+        const botUser = {
+          username: "NexaBot",
+          profileImage: "https://i.imgur.com/DvliwXN.png",
+          status: "online"
+        };
+        
+        const bot = await this.createUser(botUser);
+        console.log("NexaBot user created for production:", bot.id);
+      }
+    } catch (error) {
+      console.log("Bot user initialization skipped:", error.message);
     }
   }
 

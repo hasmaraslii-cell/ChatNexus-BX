@@ -1,35 +1,73 @@
-import { GoogleGenerativeAI } from "@google/genai";
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
-
 class AIService {
-  private model = "gemini-1.5-flash";
-
   async generateResponse(prompt: string, context?: string): Promise<string> {
     try {
-      const systemPrompt = `Sen NexaBot adında eğlenceli ve yardımcı bir sohbet botusun. Türkçe konuşuyorsun ve samimi bir tonda cevap veriyorsun. Kısa ve anlaşılır cevaplar ver. Maksimum 200 karakter kullan. Kullanıcılara her zaman ismiyle hitap et.${context ? ` İşte sohbet bağlamı: ${context}` : ''}`;
+      if (!process.env.GOOGLE_API_KEY) {
+        return "AI özelliği şu anda mevcut değil (API anahtarı eksik).";
+      }
 
-      const model = genAI.getGenerativeModel({ model: this.model });
-      const result = await model.generateContent(`${systemPrompt}\n\nSoru: ${prompt}`);
-      const response = await result.response;
+      // Use fetch to call Google AI directly
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Sen NexaBot adında eğlenceli ve yardımcı bir sohbet botusun. Türkçe konuşuyorsun ve samimi bir tonda cevap veriyorsun. Kısa ve anlaşılır cevaplar ver. Maksimum 200 karakter kullan. Kullanıcılara her zaman ismiyle hitap et.${context ? ` İşte sohbet bağlamı: ${context}` : ''}\n\nSoru: ${prompt}`
+            }]
+          }]
+        })
+      });
 
-      return response.text() || "Üzgünüm, şu anda cevap veremiyorum.";
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+        return data.candidates[0].content.parts[0].text || "Üzgünüm, şu anda cevap veremiyorum.";
+      }
+      
+      return "Üzgünüm, şu anda cevap veremiyorum.";
     } catch (error) {
       console.error("AI Response Error:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
-      return `💬 AI servisi hatası: ${JSON.stringify(error, null, 2)}`;
+      return "AI servisi şu anda yanıt veremiyor. Lütfen daha sonra tekrar deneyin.";
     }
   }
 
   async translateText(text: string, targetLang: string = "tr"): Promise<string> {
     try {
+      if (!process.env.GOOGLE_API_KEY) {
+        return "Çeviri özelliği şu anda mevcut değil.";
+      }
+
       const prompt = `Bu metni ${targetLang === "tr" ? "Türkçe" : "İngilizce"}'ye çevir: "${text}"`;
       
-      const model = genAI.getGenerativeModel({ model: this.model });
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }]
+        })
+      });
 
-      return response.text() || "Çeviri yapılamadı.";
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+        return data.candidates[0].content.parts[0].text || "Çeviri yapılamadı.";
+      }
+
+      return "Çeviri yapılamadı.";
     } catch (error) {
       console.error("Translation Error:", error);
       return "Çeviri servisinde hata oluştu.";
@@ -38,13 +76,35 @@ class AIService {
 
   async explainTopic(topic: string): Promise<string> {
     try {
+      if (!process.env.GOOGLE_API_KEY) {
+        return "Açıklama özelliği şu anda mevcut değil.";
+      }
+
       const prompt = `"${topic}" konusunu basit ve anlaşılır şekilde 150 kelimeyle açıkla.`;
       
-      const model = genAI.getGenerativeModel({ model: this.model });
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }]
+        })
+      });
 
-      return response.text() || "Bu konu hakkında bilgi bulunamadı.";
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+        return data.candidates[0].content.parts[0].text || "Bu konu hakkında bilgi bulunamadı.";
+      }
+
+      return "Bu konu hakkında bilgi bulunamadı.";
     } catch (error) {
       console.error("Explanation Error:", error);
       return "Açıklama servisinde hata oluştu.";
@@ -53,6 +113,10 @@ class AIService {
 
   async generateCreativeContent(type: string, prompt: string): Promise<string> {
     try {
+      if (!process.env.GOOGLE_API_KEY) {
+        return "Yaratıcı içerik özelliği şu anda mevcut değil.";
+      }
+
       let systemPrompt = "";
       
       switch (type) {
@@ -69,11 +133,29 @@ class AIService {
           systemPrompt = "Verilen konuda yaratıcı bir metin oluştur.";
       }
 
-      const model = genAI.getGenerativeModel({ model: this.model });
-      const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
-      const response = await result.response;
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: `${systemPrompt}\n\n${prompt}` }]
+          }]
+        })
+      });
 
-      return response.text() || "Yaratıcı içerik oluşturulamadı.";
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+        return data.candidates[0].content.parts[0].text || "Yaratıcı içerik oluşturulamadı.";
+      }
+
+      return "Yaratıcı içerik oluşturulamadı.";
     } catch (error) {
       console.error("Creative Content Error:", error);
       return "İçerik üretiminde hata oluştu.";
