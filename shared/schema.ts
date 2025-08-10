@@ -37,6 +37,8 @@ export const messages = pgTable("messages", {
   // File group data for multiple file uploads
   fileGroupId: varchar("file_group_id"),
   groupIndex: integer("group_index"),
+  // New attachments field for multiple media files
+  attachments: text("attachments").default("[]"), // JSON string array of {type: string, url: string, name: string}
 });
 
 export const reactions = pgTable("reactions", {

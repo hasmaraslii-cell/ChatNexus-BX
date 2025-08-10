@@ -42,11 +42,7 @@ export class NexaBot {
     const content = message.content.trim();
     const username = message.user?.username || "Kullanıcı";
     
-    // Check for profanity filter
-    if (this.containsProfanity(content)) {
-      await this.sendMessage(`⚠️ ${username}, lütfen nezaket kurallarına uygun mesajlar yazın.`, roomId);
-      return;
-    }
+    // Remove profanity filter as requested by user - NexaBot was incorrectly flagging non-profane messages
 
     // Get room info to check if it's a DM
     const room = await storage.getRoom(roomId);
@@ -762,24 +758,7 @@ ${content}`, roomId);
     }
   }
 
-  private containsProfanity(text: string): boolean {
-    const profanityWords = [
-      'amk', 'amq', 'oç', 'aq', 'mk', 'salak', 'aptal', 'gerizekalı', 
-      'mal', 'köpek', 'it', 'pislik', 'kaka', 'boktan', 'saçma',
-      'fuck', 'shit', 'damn', 'bitch', 'ass', 'hell', 'stupid', 'idiot'
-    ];
-    
-    const normalizedText = text.toLowerCase()
-      .replace(/[^a-züığıöşç]/g, ' ')
-      .split(' ')
-      .filter(word => word.length > 0);
-    
-    return profanityWords.some(profanity => 
-      normalizedText.some(word => 
-        word.includes(profanity) || profanity.includes(word)
-      )
-    );
-  }
+  // Profanity filter removed as requested - was incorrectly flagging non-profane messages
 
   private async searchWithAI(query: string, roomId: string): Promise<void> {
     try {

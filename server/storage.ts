@@ -1,8 +1,7 @@
 import { type User, type InsertUser, type Room, type InsertRoom, type Message, type InsertMessage, type MessageWithUser, type RoomWithMessageCount, type TypingIndicator, users, rooms, messages, reactions } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { botManager } from "./bot-manager";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { db } from "./db";
 import { eq, and, desc, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
@@ -316,9 +315,9 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       editedAt: null,
       replyToId: insertMessage.replyToId || null,
-
       fileGroupId: insertMessage.fileGroupId || null,
       groupIndex: insertMessage.groupIndex || null,
+      attachments: "[]", // Default empty attachments array
     };
     this.messages.set(id, message);
     await this.incrementRoomMessageCount(insertMessage.roomId);
@@ -531,8 +530,8 @@ export class PostgreSQLStorage implements IStorage {
       throw new Error("DATABASE_URL environment variable is required");
     }
     
-    const sql = neon(process.env.DATABASE_URL);
-    this.db = drizzle(sql);
+    // Database connection to be implemented when PostgreSQL is available
+    this.db = null; // TODO: Initialize when database is ready
     this.typingIndicators = new Map();
     
     // Initialize default rooms and bot

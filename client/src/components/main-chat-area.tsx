@@ -4,9 +4,10 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Hash, Paperclip, Search, Bell, Plus, Smile, Send, X, Mic, MicOff, Reply } from "lucide-react";
+import { Hash, Paperclip, Search, Bell, Plus, Smile, Send, X, Mic, MicOff, Reply, Image, Video } from "lucide-react";
 import MessageItem from "@/components/message-item";
 import FileUploadArea from "@/components/file-upload-area";
+import MediaPreview from "@/components/media-preview";
 import { useNotifications } from "@/hooks/use-notifications";
 
 import type { Room, User, MessageWithUser, TypingIndicator } from "@shared/schema";
@@ -20,9 +21,16 @@ interface MainChatAreaProps {
   onStartDM?: (user: User) => void;
 }
 
+interface MediaFile {
+  file: File;
+  preview: string;
+  type: 'image' | 'video';
+}
+
 export default function MainChatArea({ currentRoom, currentUser, replyToMessage, onClearReply, onReply, onStartDM }: MainChatAreaProps) {
   const [message, setMessage] = useState("");
   const [showFileUpload, setShowFileUpload] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<MediaFile[]>([]);
 
   const [isTyping, setIsTyping] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -65,6 +73,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
       fileName?: string;
       filePath?: string;
       fileSize?: number;
+      attachments?: Array<{type: string, url: string, name: string}>;
     }) => {
       const response = await apiRequest("POST", "/api/messages", messageData);
       return response.json();
@@ -103,16 +112,52 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     }
   }, [message]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!message.trim()) return;
+    if (!message.trim() && selectedMedia.length === 0) return;
+
+    let attachments: Array<{type: string, url: string, name: string}> = [];
+    
+    // Upload media files if any selected
+    if (selectedMedia.length > 0) {
+      const formData = new FormData();
+      selectedMedia.forEach((media) => {
+        formData.append('files', media.file);
+      });
+
+      try {
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Dosya yüklenemedi');
+        }
+
+        const uploadResults = await uploadResponse.json();
+        attachments = uploadResults.map((result: any, index: number) => ({
+          type: selectedMedia[index].type,
+          url: result.path,
+          name: result.originalName
+        }));
+      } catch (error) {
+        toast({
+          title: "Hata",
+          description: "Medya dosyaları yüklenemedi",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     const messageData: any = {
       roomId: currentRoom.id,
       userId: currentUser.id,
-      content: message.trim(),
-      messageType: "text",
+      content: message.trim() || undefined,
+      messageType: attachments.length > 0 ? "media" : "text",
+      attachments
     };
 
     // Add reply reference if replying to a message
@@ -123,6 +168,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     sendMessageMutation.mutate(messageData);
 
     setMessage("");
+    setSelectedMedia([]);
     setIsTyping(false);
     
     // Clear typing indicator
@@ -210,6 +256,59 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     }
 
     setShowFileUpload(false);
+  };
+
+  // Handle file selection for media preview
+  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newMediaFiles: MediaFile[] = [];
+    
+    for (let i = 0; i < Math.min(files.length, 20); i++) {
+      const file = files[i];
+      
+      if (file.size > 50 * 1024 * 1024) {
+        toast({
+          title: "Dosya çok büyük",
+          description: `${file.name} dosyası 50MB'dan küçük olmalı`,
+          variant: "destructive",
+        });
+        continue;
+      }
+
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      
+      if (isImage || isVideo) {
+        const preview = URL.createObjectURL(file);
+        newMediaFiles.push({
+          file,
+          preview,
+          type: isImage ? 'image' : 'video'
+        });
+      }
+    }
+
+    setSelectedMedia(prev => [...prev, ...newMediaFiles]);
+    
+    // Clear the input
+    if (e.target) e.target.value = '';
+  };
+
+  const removeMediaFile = (index: number) => {
+    setSelectedMedia(prev => {
+      const newFiles = [...prev];
+      // Revoke the URL to prevent memory leaks
+      URL.revokeObjectURL(newFiles[index].preview);
+      newFiles.splice(index, 1);
+      return newFiles;
+    });
+  };
+
+  const clearAllMedia = () => {
+    selectedMedia.forEach(media => URL.revokeObjectURL(media.preview));
+    setSelectedMedia([]);
   };
 
   // Voice recording functionality
@@ -671,17 +770,27 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
             )}
 
             <form onSubmit={handleSubmit} className="flex items-end p-3 space-x-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0"
-                title="Dosya Ekle"
-                onClick={() => setShowFileUpload(!showFileUpload)}
-                data-testid="button-add-file"
-              >
-                <Plus className="w-5 h-5" />
-              </Button>
+              <div className="relative">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2 shrink-0"
+                  title="Medya Dosyası Ekle"
+                  onClick={() => document.getElementById('media-input')?.click()}
+                  data-testid="button-add-media"
+                >
+                  <Image className="w-5 h-5" />
+                </Button>
+                <input
+                  id="media-input"
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleMediaSelect}
+                />
+              </div>
               
 
               
@@ -724,7 +833,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
                 type="submit"
                 className="bg-[var(--discord-blurple)] hover:bg-[var(--discord-blurple)]/80 text-white p-2 shrink-0 flex items-center justify-center"
                 title="Gönder"
-                disabled={!message.trim() || sendMessageMutation.isPending}
+                disabled={sendMessageMutation.isPending || (selectedMedia.length === 0 && !message.trim())}
                 data-testid="button-send-message"
               >
                 <Send className="w-4 h-4 md:w-5 md:h-5" />
@@ -736,6 +845,13 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
           {showFileUpload && (
             <FileUploadArea onFileUpload={handleFileUpload} />
           )}
+          
+          {/* Media Preview Component */}
+          <MediaPreview
+            mediaFiles={selectedMedia}
+            onRemove={removeMediaFile}
+            onClear={clearAllMedia}
+          />
         </div>
       </div>
 

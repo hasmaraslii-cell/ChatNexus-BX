@@ -40,12 +40,29 @@ export default function RoomSidebar({
 
 
 
+  // Query to get user info for DM profile pictures
+  const { data: allUsersForDM } = useQuery({
+    queryKey: ["/api/users"],
+    enabled: !!currentUser,
+    staleTime: 60000,
+  });
+
   const getDMDisplayName = (room: Room) => {
     if (!room.participants || room.participants.length < 2) return room.name;
     
     // Show only the other person's name, not current user's name
     const otherUserName = room.name.split(', ').find(name => name !== currentUser.username);
     return otherUserName || "DM";
+  };
+
+  const getDMUserInfo = (room: Room) => {
+    if (!room.participants || !allUsersForDM) return null;
+    
+    // Get the other user's info (not current user)
+    const otherUserId = room.participants.find(id => id !== currentUser.id);
+    if (!otherUserId) return null;
+    
+    return (allUsersForDM as UserType[]).find(user => user.id === otherUserId);
   };
 
   return (
@@ -124,9 +141,24 @@ export default function RoomSidebar({
                     >
                       {/* Show profile picture for DM instead of icon */}
                       <div className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mr-2 overflow-hidden">
-                        <span className="text-white text-xs font-bold">
-                          {getDMDisplayName(room).charAt(0).toUpperCase()}
-                        </span>
+                        {(() => {
+                          const userInfo = getDMUserInfo(room);
+                          const displayName = getDMDisplayName(room);
+                          if (userInfo && userInfo.profileImage) {
+                            return (
+                              <img 
+                                src={userInfo.profileImage} 
+                                alt={userInfo.username}
+                                className="w-full h-full object-cover"
+                              />
+                            );
+                          }
+                          return (
+                            <span className="text-white text-xs font-bold">
+                              {displayName.charAt(0).toUpperCase()}
+                            </span>
+                          );
+                        })()}
                       </div>
                       <span className="flex-1 text-left font-medium">
                         {getDMDisplayName(room)}
