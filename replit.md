@@ -30,6 +30,7 @@ Recent Customizations (Aug 2025):
 - **COMPLETED**: Added many new entertainment commands (weather, facts, games, word puzzles)
 - **COMPLETED**: Added AI integration to NexaBot using Gemini API with smart chat capabilities
 - **COMPLETED**: Fixed NexaBot API configuration and improved user addressing (Aug 10, 2025)
+- **COMPLETED**: Fixed AI service using direct Google API calls - NexaBot now works perfectly (Aug 10, 2025)
 - **COMPLETED**: Enhanced AI mention detection (responds to "Nexa", "NexaBot", "nexa yapay zeka")  
 - **COMPLETED**: Improved keyboard controls (Enter for new line, Ctrl+Enter to send)
 - **COMPLETED**: Removed non-functional GIF command per user request
