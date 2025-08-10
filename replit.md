@@ -28,6 +28,7 @@ Recent Customizations (Aug 2025):
 - **COMPLETED**: Improved link formatting [text](url) with clickable blue styling
 - **COMPLETED**: Enhanced bot search with DuckDuckGo and Wikipedia APIs for better results
 - **COMPLETED**: Added many new entertainment commands (weather, facts, games, word puzzles)
+- **COMPLETED**: Added AI integration to NexaBot using Gemini API with smart chat capabilities
 - Custom gradient theme: linear gradient from #c6dfff (light blue) to #f7c6e9 (light pink) at 135 degrees
 - File upload limits: 50MB max, up to 20 files simultaneously
 - WhatsApp-style grouped file uploads to prevent spam

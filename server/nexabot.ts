@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import { InsertMessage } from "@shared/schema";
+import { aiService } from "./ai";
 
 export class NexaBot {
   private botUser: any = null;
@@ -118,8 +119,60 @@ export class NexaBot {
         case "!matematik":
           await this.generateMathProblem(roomId);
           break;
+        case "!ai":
+        case "!sor":
+          if (args.length > 1) {
+            const question = args.slice(1).join(" ");
+            await this.askAI(question, roomId);
+          } else {
+            await this.sendMessage("Kullanım: !ai <sorunuz> veya !sor <sorunuz>", roomId);
+          }
+          break;
+        case "!çevir":
+          if (args.length > 1) {
+            const text = args.slice(1).join(" ");
+            await this.translateText(text, roomId);
+          } else {
+            await this.sendMessage("Kullanım: !çevir <çevrilecek metin>", roomId);
+          }
+          break;
+        case "!açıkla":
+          if (args.length > 1) {
+            const topic = args.slice(1).join(" ");
+            await this.explainTopic(topic, roomId);
+          } else {
+            await this.sendMessage("Kullanım: !açıkla <konu>", roomId);
+          }
+          break;
+        case "!şiir":
+          if (args.length > 1) {
+            const topic = args.slice(1).join(" ");
+            await this.generateCreativeContent("şiir", topic, roomId);
+          } else {
+            await this.sendMessage("Kullanım: !şiir <konu>", roomId);
+          }
+          break;
+        case "!hikaye":
+          if (args.length > 1) {
+            const topic = args.slice(1).join(" ");
+            await this.generateCreativeContent("hikaye", topic, roomId);
+          } else {
+            await this.sendMessage("Kullanım: !hikaye <konu>", roomId);
+          }
+          break;
+        case "!sohbet":
+          if (args.length > 1) {
+            const message = args.slice(1).join(" ");
+            await this.chatWithAI(message, roomId);
+          } else {
+            await this.sendMessage("Kullanım: !sohbet <mesajınız> - Benimle doğal sohbet edin!", roomId);
+          }
+          break;
         default:
-          await this.sendMessage("Bilinmeyen komut! !yardım yazarak tüm komutları görebilirsin.", roomId);
+          // Eğer komut ! ile başlıyorsa ve bilinmiyorsa, AI'ya sor
+          if (content.startsWith("!")) {
+            await this.sendMessage("Bilinmeyen komut! !yardım yazarak tüm komutları görebilirsin.", roomId);
+          }
       }
     } catch (error) {
       console.error("Bot command error:", error);
@@ -148,6 +201,15 @@ export class NexaBot {
 • !saat - Şu anki saati göster
 • !bilgi - Bot hakkında bilgi
 • !hava <şehir> - Hava durumu öğren
+
+**🤖 Yapay Zeka:**
+• !ai <soru> - AI'ya soru sor
+• !sor <soru> - AI'dan yardım iste
+• !sohbet <mesaj> - Doğal sohbet et
+• !çevir <metin> - Metni çevir
+• !açıkla <konu> - Bir konuyu açıklat
+• !şiir <konu> - Şiir yazdır
+• !hikaye <konu> - Hikaye oluştur
 
 **🎲 Eğlence:**
 • !zar - 1-6 arası zar at
@@ -579,6 +641,83 @@ Cevabını yazabilirsin! 📐
 Komutları ! işareti ile başlatmayı unutma! 🚀`;
 
     await this.sendMessage(commands, roomId);
+  }
+
+  // AI Functions
+  private async askAI(question: string, roomId: string): Promise<void> {
+    try {
+      await this.sendMessage("🤖 AI düşünüyor, lütfen bekleyin...", roomId);
+      
+      const response = await aiService.generateResponse(question);
+      await this.sendMessage(`🧠 **AI Cevabı:**
+
+${response}`, roomId);
+    } catch (error) {
+      console.error("AI Question Error:", error);
+      await this.sendMessage("AI servisi şu anda yanıt veremiyor. Lütfen daha sonra tekrar deneyin.", roomId);
+    }
+  }
+
+  private async chatWithAI(message: string, roomId: string): Promise<void> {
+    try {
+      await this.sendMessage("💭 Sohbet ediyorum...", roomId);
+      
+      const response = await aiService.generateResponse(message, "Dostane bir sohbet yapıyorsunuz.");
+      await this.sendMessage(`💬 ${response}`, roomId);
+    } catch (error) {
+      console.error("AI Chat Error:", error);
+      await this.sendMessage("Şu anda sohbet edemiyorum. Lütfen daha sonra tekrar deneyin.", roomId);
+    }
+  }
+
+  private async translateText(text: string, roomId: string): Promise<void> {
+    try {
+      await this.sendMessage("🌐 Çeviri yapılıyor...", roomId);
+      
+      // Detect if text is Turkish or English and translate accordingly
+      const isTurkish = /[çğıöşüÇĞIÖŞÜ]/.test(text);
+      const targetLang = isTurkish ? "en" : "tr";
+      
+      const translation = await aiService.translateText(text, targetLang);
+      await this.sendMessage(`🔄 **Çeviri:**
+
+**Orijinal:** ${text}
+**Çeviri:** ${translation}`, roomId);
+    } catch (error) {
+      console.error("Translation Error:", error);
+      await this.sendMessage("Çeviri yapılamadı. Lütfen daha sonra tekrar deneyin.", roomId);
+    }
+  }
+
+  private async explainTopic(topic: string, roomId: string): Promise<void> {
+    try {
+      await this.sendMessage("📚 Konu açıklanıyor...", roomId);
+      
+      const explanation = await aiService.explainTopic(topic);
+      await this.sendMessage(`📖 **"${topic}" Açıklaması:**
+
+${explanation}`, roomId);
+    } catch (error) {
+      console.error("Explanation Error:", error);
+      await this.sendMessage("Konu açıklanamadı. Lütfen daha sonra tekrar deneyin.", roomId);
+    }
+  }
+
+  private async generateCreativeContent(type: string, topic: string, roomId: string): Promise<void> {
+    try {
+      const typeEmoji = type === "şiir" ? "📝" : "📚";
+      const typeText = type === "şiir" ? "Şiir" : "Hikaye";
+      
+      await this.sendMessage(`${typeEmoji} ${typeText} yazılıyor...`, roomId);
+      
+      const content = await aiService.generateCreativeContent(type, topic);
+      await this.sendMessage(`${typeEmoji} **${topic} - ${typeText}:**
+
+${content}`, roomId);
+    } catch (error) {
+      console.error("Creative Content Error:", error);
+      await this.sendMessage("İçerik oluşturulamadı. Lütfen daha sonra tekrar deneyin.", roomId);
+    }
   }
 }
 
