@@ -547,20 +547,32 @@ export class PostgreSQLStorage implements IStorage {
 
   private async initializeBotUser() {
     try {
-      // Create NexaBot user for production deployment
-      const existingBot = await this.getUserByUsername("NexaBot");
-      if (!existingBot) {
+      // NexaBot'un tek instance'ının olduğundan emin ol
+      const existingBots = await this.db.select().from(users).where(eq(users.username, "NexaBot"));
+      
+      if (existingBots.length === 0) {
+        // Hiç NexaBot yoksa oluştur
         const botUser = {
           username: "NexaBot",
-          profileImage: "https://i.imgur.com/DvliwXN.png",
+          profileImage: "https://i.imgur.com/2FDBAwR.png", // Orijinal logo
           status: "online"
         };
         
         const bot = await this.createUser(botUser);
-        console.log("NexaBot user created for production:", bot.id);
+        console.log("NexaBot user created:", bot.id);
+      } else if (existingBots.length > 1) {
+        // Birden fazla varsa, en eskisini tut diğerlerini sil
+        const keepBot = existingBots[0];
+        for (let i = 1; i < existingBots.length; i++) {
+          await this.db.delete(users).where(eq(users.id, existingBots[i].id));
+          console.log(`Duplicate NexaBot removed: ${existingBots[i].id}`);
+        }
+        console.log(`Kept original NexaBot: ${keepBot.id}`);
+      } else {
+        console.log("NexaBot already exists:", existingBots[0].id);
       }
     } catch (error) {
-      console.log("Bot user initialization skipped:", (error as Error).message);
+      console.log("Bot user initialization error:", (error as Error).message);
     }
   }
 
