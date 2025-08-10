@@ -38,15 +38,7 @@ export default function RoomSidebar({
     refetchInterval: 60000, // Only refresh once per minute
   });
 
-  const getMessageCount = (room: Room) => {
-    return room.messageCount || 0;
-  };
 
-  const getCountColor = (count: number) => {
-    if (count === 0) return "hidden";
-    if (count < 10) return "bg-red-500 text-white";
-    return "bg-[var(--discord-blurple)] text-white";
-  };
 
   const getDMDisplayName = (room: Room) => {
     if (!room.participants || room.participants.length < 2) return room.name;
@@ -71,7 +63,6 @@ export default function RoomSidebar({
           </h3>
           
           {rooms.map((room) => {
-            const messageCount = getMessageCount(room);
             const isActive = currentRoom.id === room.id;
             
             return (
@@ -91,11 +82,6 @@ export default function RoomSidebar({
                   <span className="flex-1 text-left font-medium">
                     {room.name}
                   </span>
-                  {messageCount > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold transition-all ${getCountColor(messageCount)}`}>
-                      {messageCount}
-                    </span>
-                  )}
                 </Button>
               </div>
             );
@@ -123,7 +109,6 @@ export default function RoomSidebar({
           {showDMs && dmRooms && Array.isArray(dmRooms) && (
             <div className="space-y-1">
               {(dmRooms as Room[]).map((room: Room) => {
-                const messageCount = getMessageCount(room);
                 const isActive = currentRoom.id === room.id;
                 
                 return (
@@ -146,11 +131,6 @@ export default function RoomSidebar({
                       <span className="flex-1 text-left font-medium">
                         {getDMDisplayName(room)}
                       </span>
-                      {messageCount > 0 && (
-                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold transition-all ${getCountColor(messageCount)}`}>
-                          {messageCount}
-                        </span>
-                      )}
                     </Button>
                   </div>
                 );
