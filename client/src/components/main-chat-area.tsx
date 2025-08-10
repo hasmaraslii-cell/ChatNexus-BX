@@ -369,12 +369,36 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     }, 0);
   };
 
-  // Handle paste events for GIFs from mobile keyboards
+  // Handle paste events for GIFs from mobile keyboards (Gboard support)
   const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const items = e.clipboardData.items;
+    const files = e.clipboardData.files;
     
+    console.log('Paste event detected:', { items: items.length, files: files.length });
+    
+    // First check clipboardData.files (better for mobile keyboards like Gboard)
+    if (files && files.length > 0) {
+      e.preventDefault();
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        console.log('File from clipboardData.files:', file.type, file.name);
+        
+        if (file.type === 'image/gif') {
+          toast({
+            title: "GIF algılandı",
+            description: "GIF'iniz yükleniyor...",
+          });
+        }
+        
+        await handleFileUpload(file);
+      }
+      return;
+    }
+    
+    // Fallback to clipboardData.items
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
+      console.log('Clipboard item:', item.kind, item.type);
       
       // Check if the pasted item is a file (including GIFs)
       if (item.kind === 'file') {
@@ -382,6 +406,8 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
         const file = item.getAsFile();
         
         if (file) {
+          console.log('File from clipboardData.items:', file.type, file.name);
+          
           // Handle GIF files specifically
           if (file.type === 'image/gif') {
             toast({
@@ -397,29 +423,120 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
     }
   };
 
-  // Handle drag and drop events for GIFs
+  // Handle drag and drop events for GIFs  
   const handleDrop = async (e: React.DragEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
     
     const files = e.dataTransfer.files;
+    console.log('Drop event detected:', files.length, 'files');
+    
     if (files.length > 0) {
-      const file = files[0];
-      
-      // Handle GIF files specifically
-      if (file.type === 'image/gif') {
-        toast({
-          title: "GIF algılandı",
-          description: "GIF'iniz yükleniyor...",
-        });
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        console.log('Dropped file:', file.type, file.name);
+        
+        // Handle GIF files specifically
+        if (file.type === 'image/gif') {
+          toast({
+            title: "GIF algılandı",
+            description: "GIF'iniz yükleniyor...",
+          });
+        }
+        
+        await handleFileUpload(file);
       }
-      
-      await handleFileUpload(file);
     }
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
   };
+
+  // Global paste event listener for better mobile keyboard support (Gboard)
+  useEffect(() => {
+    const handleGlobalPaste = async (e: ClipboardEvent) => {
+      // Only handle if we're focused in the textarea or chat area
+      const activeElement = document.activeElement;
+      if (!textareaRef.current || !activeElement) return;
+      
+      // Check if textarea is focused or if we're in the chat area
+      const isTextareaFocused = activeElement === textareaRef.current;
+      const isInChatArea = textareaRef.current.contains(activeElement);
+      
+      if (isTextareaFocused || isInChatArea) {
+        const items = e.clipboardData?.items;
+        const files = e.clipboardData?.files;
+        
+        console.log('Global paste event (Gboard):', { 
+          items: items?.length, 
+          files: files?.length,
+          focused: isTextareaFocused,
+          inArea: isInChatArea 
+        });
+        
+        // Check files first (this works better for mobile keyboards like Gboard)
+        if (files && files.length > 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            console.log('Global paste file detected:', file.type, file.name, file.size);
+            
+            if (file.type === 'image/gif') {
+              toast({
+                title: "GIF başarıyla algılandı! 🎭",
+                description: "Gboard'dan GIF yükleniyor...",
+              });
+            } else if (file.type.startsWith('image/')) {
+              toast({
+                title: "Resim algılandı! 🖼️",
+                description: "Dosya yükleniyor...",
+              });
+            }
+            
+            await handleFileUpload(file);
+          }
+          return;
+        }
+        
+        // Fallback to items for other paste scenarios
+        if (items) {
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            console.log('Global paste item:', item.kind, item.type);
+            
+            if (item.kind === 'file') {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              const file = item.getAsFile();
+              if (file) {
+                console.log('Global paste item file:', file.type, file.name, file.size);
+                
+                if (file.type === 'image/gif') {
+                  toast({
+                    title: "GIF başarıyla algılandı! 🎭",
+                    description: "Clipboard'dan GIF yükleniyor...",
+                  });
+                }
+                
+                await handleFileUpload(file);
+              }
+              return;
+            }
+          }
+        }
+      }
+    };
+
+    // Add event listener to document for global paste handling
+    document.addEventListener('paste', handleGlobalPaste, true);
+    
+    return () => {
+      document.removeEventListener('paste', handleGlobalPaste, true);
+    };
+  }, [handleFileUpload, toast]);
 
   return (
     <div className="flex flex-col h-full bg-[var(--discord-dark)] relative">
