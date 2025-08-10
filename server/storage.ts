@@ -151,10 +151,21 @@ export class MemStorage implements IStorage {
 
   async getOnlineUsers(): Promise<User[]> {
     const now = new Date();
-    return Array.from(this.users.values()).filter(user => 
+    const onlineUsers = Array.from(this.users.values()).filter(user => 
       user.status === "online" && 
       (!user.bannedUntil || user.bannedUntil < now)
     );
+    
+    // NexaBot'u her zaman online olarak göster
+    const nexaBot = await this.getUserByUsername("NexaBot");
+    if (nexaBot && !onlineUsers.find(user => user.username === "NexaBot")) {
+      // NexaBot'u online yap ve listeye ekle
+      nexaBot.status = "online";
+      this.users.set(nexaBot.id, nexaBot);
+      onlineUsers.push(nexaBot);
+    }
+    
+    return onlineUsers;
   }
 
   async getOfflineUsers(): Promise<User[]> {
@@ -492,7 +503,7 @@ export class PostgreSQLStorage implements IStorage {
         console.log("NexaBot user created for production:", bot.id);
       }
     } catch (error) {
-      console.log("Bot user initialization skipped:", error.message);
+      console.log("Bot user initialization skipped:", (error as Error).message);
     }
   }
 
@@ -617,12 +628,18 @@ export class PostgreSQLStorage implements IStorage {
 
   async getOnlineUsers(): Promise<User[]> {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    return await this.db.select().from(users)
-      .where(and(
-        eq(users.status, "online"),
-        // Consider users who were active in the last 5 minutes as online
-        // Note: We'll use a more lenient check here
-      ));
+    const onlineUsers = await this.db.select().from(users)
+      .where(eq(users.status, "online"));
+    
+    // NexaBot'u her zaman online olarak göster
+    const nexaBot = await this.getUserByUsername("NexaBot");
+    if (nexaBot && !onlineUsers.find(user => user.username === "NexaBot")) {
+      // NexaBot'u online yap ve listeye ekle
+      await this.updateUserStatus(nexaBot.id, "online");
+      onlineUsers.push({ ...nexaBot, status: "online" });
+    }
+    
+    return onlineUsers;
   }
 
   async getOfflineUsers(): Promise<User[]> {
@@ -839,7 +856,7 @@ export class PostgreSQLStorage implements IStorage {
   }
 }
 
-// Use PostgreSQL storage in production, MemStorage for development
-export const storage = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL 
+// Always use PostgreSQL storage when DATABASE_URL is available
+export const storage = process.env.DATABASE_URL 
   ? new PostgreSQLStorage() 
   : new MemStorage();
