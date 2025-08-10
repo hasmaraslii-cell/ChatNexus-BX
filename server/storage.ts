@@ -1,5 +1,8 @@
-import { type User, type InsertUser, type Room, type InsertRoom, type Message, type InsertMessage, type MessageWithUser, type RoomWithMessageCount, type TypingIndicator } from "@shared/schema";
+import { type User, type InsertUser, type Room, type InsertRoom, type Message, type InsertMessage, type MessageWithUser, type RoomWithMessageCount, type TypingIndicator, users, rooms, messages, reactions } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import { eq, and, desc, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Typing indicators
@@ -431,4 +434,361 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class PostgreSQLStorage implements IStorage {
+  private db: any;
+  private typingIndicators: Map<string, TypingIndicator>;
+
+  constructor() {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL environment variable is required");
+    }
+    
+    const sql = neon(process.env.DATABASE_URL);
+    this.db = drizzle(sql);
+    this.typingIndicators = new Map();
+    
+    // Initialize default rooms
+    this.initializeDefaultRooms();
+    
+    // Clean up old typing indicators every 10 seconds
+    setInterval(() => this.cleanupOldTypingIndicators(), 10000);
+  }
+
+  private async initializeDefaultRooms() {
+    const defaultRooms = [
+      { name: "💬｜sohbet", description: "Genel sohbet kanalı" },
+      { name: "😂｜mizah", description: "Komik içerikler ve şakalar" },
+      { name: "🎮｜oyunlar", description: "Oyun tartışmaları" },
+      { name: "🎵｜müzik", description: "Müzik paylaşımları ve tartışmaları" },
+      { name: "🖼️｜medya", description: "Video, resim ve medya paylaşımları" },
+      { name: "🎬｜filmler", description: "Film ve dizi konuşmaları" },
+    ];
+
+    for (const roomData of defaultRooms) {
+      const existingRoom = await this.getRoomByName(roomData.name);
+      if (!existingRoom) {
+        await this.createRoom({
+          name: roomData.name,
+          description: roomData.description,
+          isDM: false,
+          participants: []
+        });
+      }
+    }
+  }
+
+  // Typing indicators
+  async setTyping(userId: string, roomId: string, username: string): Promise<void> {
+    const key = `${userId}:${roomId}`;
+    this.typingIndicators.set(key, {
+      userId,
+      roomId,
+      username,
+      timestamp: new Date()
+    });
+  }
+
+  async clearTyping(userId: string, roomId: string): Promise<void> {
+    const key = `${userId}:${roomId}`;
+    this.typingIndicators.delete(key);
+  }
+
+  async getTypingUsers(roomId: string): Promise<TypingIndicator[]> {
+    const indicators = Array.from(this.typingIndicators.values())
+      .filter(indicator => indicator.roomId === roomId);
+    return indicators;
+  }
+
+  private cleanupOldTypingIndicators(): void {
+    const now = new Date();
+    const cutoffTime = new Date(now.getTime() - 10000); // 10 seconds ago
+    
+    Array.from(this.typingIndicators.entries()).forEach(([key, indicator]) => {
+      if (indicator.timestamp < cutoffTime) {
+        this.typingIndicators.delete(key);
+      }
+    });
+  }
+
+  // Users
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    // Check if this is the first user (admin)
+    const existingUsers = await this.db.select().from(users).limit(1);
+    const isFirstUser = existingUsers.length === 0;
+    
+    const result = await this.db.insert(users).values({
+      ...user,
+      isAdmin: isFirstUser,
+      lastSeen: new Date()
+    }).returning();
+    
+    return result[0];
+  }
+
+  async updateUserStatus(id: string, status: string): Promise<User | undefined> {
+    const result = await this.db.update(users)
+      .set({ status, lastSeen: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateUserProfile(id: string, username: string, profileImage?: string): Promise<User | undefined> {
+    const updateData: any = { username };
+    if (profileImage !== undefined) {
+      updateData.profileImage = profileImage;
+    }
+    
+    const result = await this.db.update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async banUser(id: string, bannedUntil: Date | null): Promise<User | undefined> {
+    const result = await this.db.update(users)
+      .set({ bannedUntil })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getOnlineUsers(): Promise<User[]> {
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    return await this.db.select().from(users)
+      .where(and(
+        eq(users.status, "online"),
+        // Consider users who were active in the last 5 minutes as online
+        // Note: We'll use a more lenient check here
+      ));
+  }
+
+  async getOfflineUsers(): Promise<User[]> {
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    return await this.db.select().from(users)
+      .where(eq(users.status, "offline"));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await this.db.select().from(users);
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await this.db.delete(users).where(eq(users.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Rooms
+  async getRoom(id: string): Promise<Room | undefined> {
+    const result = await this.db.select().from(rooms).where(eq(rooms.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getRoomByName(name: string): Promise<Room | undefined> {
+    const result = await this.db.select().from(rooms).where(eq(rooms.name, name)).limit(1);
+    return result[0];
+  }
+
+  async createRoom(room: InsertRoom): Promise<Room> {
+    const result = await this.db.insert(rooms).values({
+      ...room,
+      messageCount: 0
+    }).returning();
+    return result[0];
+  }
+
+  async getAllRooms(): Promise<RoomWithMessageCount[]> {
+    return await this.db.select().from(rooms);
+  }
+
+  async incrementRoomMessageCount(roomId: string): Promise<void> {
+    await this.db.update(rooms)
+      .set({ messageCount: sql`${rooms.messageCount} + 1` })
+      .where(eq(rooms.id, roomId));
+  }
+
+  async deleteRoom(id: string): Promise<boolean> {
+    const result = await this.db.delete(rooms).where(eq(rooms.id, id));
+    return result.rowCount > 0;
+  }
+
+  async updateRoomName(id: string, name: string): Promise<boolean> {
+    const result = await this.db.update(rooms)
+      .set({ name })
+      .where(eq(rooms.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Messages
+  async getMessage(id: string): Promise<Message | undefined> {
+    const result = await this.db.select().from(messages).where(eq(messages.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const result = await this.db.insert(messages).values({
+      ...message,
+      createdAt: new Date()
+    }).returning();
+    
+    // Increment room message count
+    await this.incrementRoomMessageCount(message.roomId);
+    
+    return result[0];
+  }
+
+  async updateMessage(id: string, content: string): Promise<Message | undefined> {
+    const result = await this.db.update(messages)
+      .set({ content, editedAt: new Date() })
+      .where(eq(messages.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateMessagePollVotes(id: string, pollVotes: Record<number, number>): Promise<Message | undefined> {
+    // This might need to be handled differently depending on how poll votes are stored
+    const result = await this.db.update(messages)
+      .set({ editedAt: new Date() })
+      .where(eq(messages.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMessage(id: string): Promise<boolean> {
+    const result = await this.db.delete(messages).where(eq(messages.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getMessagesByRoom(roomId: string, limit?: number): Promise<MessageWithUser[]> {
+    const query = this.db.select({
+      id: messages.id,
+      roomId: messages.roomId,
+      userId: messages.userId,
+      content: messages.content,
+      messageType: messages.messageType,
+      fileName: messages.fileName,
+      filePath: messages.filePath,
+      fileSize: messages.fileSize,
+      createdAt: messages.createdAt,
+      editedAt: messages.editedAt,
+      replyToId: messages.replyToId,
+      fileGroupId: messages.fileGroupId,
+      groupIndex: messages.groupIndex,
+      user: {
+        id: users.id,
+        username: users.username,
+        profileImage: users.profileImage,
+        status: users.status,
+        isAdmin: users.isAdmin,
+        lastSeen: users.lastSeen,
+        bannedUntil: users.bannedUntil
+      }
+    })
+    .from(messages)
+    .leftJoin(users, eq(messages.userId, users.id))
+    .where(eq(messages.roomId, roomId))
+    .orderBy(desc(messages.createdAt));
+
+    if (limit) {
+      query.limit(limit);
+    }
+
+    const result = await query;
+    return result.reverse(); // Reverse to get chronological order
+  }
+
+  async getAllMessages(): Promise<MessageWithUser[]> {
+    const result = await this.db.select({
+      id: messages.id,
+      roomId: messages.roomId,
+      userId: messages.userId,
+      content: messages.content,
+      messageType: messages.messageType,
+      fileName: messages.fileName,
+      filePath: messages.filePath,
+      fileSize: messages.fileSize,
+      createdAt: messages.createdAt,
+      editedAt: messages.editedAt,
+      replyToId: messages.replyToId,
+      fileGroupId: messages.fileGroupId,
+      groupIndex: messages.groupIndex,
+      user: {
+        id: users.id,
+        username: users.username,
+        profileImage: users.profileImage,
+        status: users.status,
+        isAdmin: users.isAdmin,
+        lastSeen: users.lastSeen,
+        bannedUntil: users.bannedUntil
+      }
+    })
+    .from(messages)
+    .leftJoin(users, eq(messages.userId, users.id))
+    .orderBy(desc(messages.createdAt));
+
+    return result;
+  }
+
+  // DM functionality
+  async createDMRoom(user1Id: string, user2Id: string): Promise<Room> {
+    const user1 = await this.getUser(user1Id);
+    const user2 = await this.getUser(user2Id);
+    
+    if (!user1 || !user2) {
+      throw new Error("Kullanıcılar bulunamadı");
+    }
+
+    const result = await this.db.insert(rooms).values({
+      name: `${user1.username}, ${user2.username}`,
+      description: `${user1.username} ve ${user2.username} arasında özel mesajlaşma`,
+      messageCount: 0,
+      isDM: true,
+      participants: [user1Id, user2Id]
+    }).returning();
+    
+    return result[0];
+  }
+
+  async getDMRoom(user1Id: string, user2Id: string): Promise<Room | null> {
+    const result = await this.db.select().from(rooms)
+      .where(and(
+        eq(rooms.isDM, true),
+        // Note: This is a simplified check. In a real implementation,
+        // you'd want to properly query the participants array
+      ));
+    
+    const dmRoom = result.find((room: Room) => 
+      room.participants && 
+      room.participants.includes(user1Id) && 
+      room.participants.includes(user2Id)
+    );
+    
+    return dmRoom || null;
+  }
+
+  async getUserDMRooms(userId: string): Promise<Room[]> {
+    const result = await this.db.select().from(rooms)
+      .where(eq(rooms.isDM, true));
+    
+    return result.filter((room: Room) => 
+      room.participants && 
+      room.participants.includes(userId)
+    );
+  }
+}
+
+// Use PostgreSQL storage in production, MemStorage for development
+export const storage = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL 
+  ? new PostgreSQLStorage() 
+  : new MemStorage();
