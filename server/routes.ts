@@ -338,6 +338,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Convert attachments array to JSON string for storage
+      if (messageData.attachments && messageData.attachments.length > 0) {
+        messageData.attachments = JSON.stringify(messageData.attachments) as any;
+      }
+      
       const message = await storage.createMessage(messageData);
       const messageWithUser = { ...message, user };
       

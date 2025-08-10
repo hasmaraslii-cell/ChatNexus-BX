@@ -65,6 +65,11 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   createdAt: true,
 }).extend({
   content: z.string().max(1000).optional(), // Increased to 1000 characters
+  attachments: z.array(z.object({
+    type: z.string(),
+    url: z.string(),
+    name: z.string()
+  })).optional(),
 });
 
 export const insertReactionSchema = createInsertSchema(reactions).omit({
