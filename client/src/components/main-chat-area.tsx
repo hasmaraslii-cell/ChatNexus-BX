@@ -137,9 +137,14 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // Only send message with Ctrl+Enter or Cmd+Enter
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSubmit(e);
+    }
+    // Escape key to close user suggestions
+    if (e.key === 'Escape' && showUserSuggestions) {
+      setShowUserSuggestions(false);
     }
   };
 
@@ -516,7 +521,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
                   onChange={handleMessageChange}
                   onKeyDown={handleKeyDown}
                   className="w-full bg-transparent text-[var(--discord-light)] placeholder:text-[var(--discord-light)]/50 resize-none border-none focus:ring-0 focus:outline-none min-h-0 p-0 text-sm md:text-base"
-                  placeholder={replyToMessage ? `${replyToMessage.user.username} kullanıcısına yanıt ver...` : (currentRoom.isDM ? `@${currentRoom.name} kişisine mesaj gönder` : `#${currentRoom.name} kanalına mesaj gönder`)}
+                  placeholder={replyToMessage ? `${replyToMessage.user.username} kullanıcısına yanıt ver... (Ctrl+Enter: gönder)` : (currentRoom.isDM ? `@${currentRoom.name} kişisine mesaj gönder (Ctrl+Enter: gönder)` : `#${currentRoom.name} kanalına mesaj gönder (Ctrl+Enter: gönder)`)}
                   rows={1}
                   disabled={sendMessageMutation.isPending}
                   data-testid="textarea-message-input"

@@ -49,7 +49,7 @@ export class NexaBot {
 
     // Check if bot is mentioned (case insensitive, handle spaces in names)
     const normalizedContent = content.toLowerCase();
-    const botMentions = ['nexabot', 'nexa bot', '@nexabot', '@nexa bot'];
+    const botMentions = ['nexabot', 'nexa bot', '@nexabot', '@nexa bot', 'nexa', 'nexa yapay zeka'];
     const isMentioned = botMentions.some(mention => normalizedContent.includes(mention));
     
     if (isMentioned && !content.startsWith("!")) {
@@ -197,6 +197,14 @@ export class NexaBot {
             await this.chatWithAI(message, roomId);
           } else {
             await this.sendMessage("Kullanım: !sohbet <mesajınız> - Benimle doğal sohbet edin!", roomId);
+          }
+          break;
+        case "!gif":
+          if (args.length > 1) {
+            const query = args.slice(1).join(" ");
+            await this.generateGif(query, roomId);
+          } else {
+            await this.sendMessage("Kullanım: !gif <metin> - Metne uygun gif oluştur!", roomId);
           }
           break;
         default:
@@ -656,6 +664,10 @@ Cevabını yazabilirsin! 📐
   private async listCommands(roomId: string): Promise<void> {
     const commands = `📋 **Tüm NexaBot Komutları:**
 
+**🤖 AI Özellikleri:**
+• !ai <soru> • !sor <soru> • !sohbet <mesaj> • !çevir <metin>
+• !açıkla <konu> • !şiir <konu> • !hikaye <konu> • !gif <metin>
+
 **🔍 Arama & Bilgi:**
 • !ara <metin> • !saat • !bilgi • !hava <şehir>
 
@@ -691,8 +703,6 @@ ${response}`, roomId);
 
   private async chatWithAI(message: string, roomId: string): Promise<void> {
     try {
-      await this.sendMessage("💭 Sohbet ediyorum...", roomId);
-      
       const response = await aiService.generateResponse(message, "Dostane bir sohbet yapıyorsunuz.");
       await this.sendMessage(`💬 ${response}`, roomId);
     } catch (error) {
@@ -790,6 +800,22 @@ ${aiResponse}
       console.error("AI Search Error:", error);
       // Fallback to original web search if AI fails
       await this.searchWeb(query, roomId);
+    }
+  }
+
+  private async generateGif(query: string, roomId: string): Promise<void> {
+    try {
+      const gifPrompt = `"${query}" konulu eğlenceli bir gif tanımla. Görsel detayları ve hareketleri anlat. Kısa ve komik olsun.`;
+      
+      const response = await aiService.generateResponse(gifPrompt);
+      await this.sendMessage(`🎬 **GIF: ${query}**
+
+${response}
+
+🎭 *AI tarafından oluşturulan gif tanımı. Gerçek gif için Tenor/Giphy kullanabilirsiniz.*`, roomId);
+    } catch (error) {
+      console.error("GIF Generation Error:", error);
+      await this.sendMessage("GIF oluşturulamadı. Lütfen daha sonra tekrar deneyin.", roomId);
     }
   }
 }
