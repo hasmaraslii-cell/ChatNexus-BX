@@ -3,9 +3,13 @@ import { pgTable, text, varchar, timestamp, integer, boolean } from "drizzle-orm
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export * from "./models/auth";
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull(),
+  password: text("password"), // Added for username/password login
+  displayName: text("display_name"), // Added for display name
   profileImage: text("profile_image"),
   status: text("status").notNull().default("online"), // online, away, busy, offline
   isAdmin: boolean("is_admin").default(false),
@@ -53,6 +57,9 @@ export const reactions = pgTable("reactions", {
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   lastSeen: true,
+}).extend({
+  password: z.string().min(6).optional(),
+  displayName: z.string().min(2).optional(),
 });
 
 export const insertRoomSchema = createInsertSchema(rooms).omit({

@@ -67,10 +67,29 @@ export default function RoomSidebar({
 
   return (
     <div className="w-72 bg-[var(--discord-darker)] flex flex-col border-r border-[var(--discord-dark)]">
-      <div className="p-4 border-b border-[var(--discord-dark)]">
-        <div className="flex items-center justify-center">
-          <img src="https://i.imgur.com/DvliwXN.png" alt="Logo" className="h-8 w-auto" />
-        </div>
+      <div className="p-4 border-b border-[var(--discord-dark)] flex items-center justify-between">
+        <h1 className="font-bold text-lg text-white truncate">Chat Nexus</h1>
+        {currentUser.isAdmin && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-[var(--discord-light)]/70"
+            title="Kanal Ekle"
+            onClick={() => {
+              const name = prompt("Kanal adı:");
+              if (name) {
+                // Implement channel creation
+                fetch("/api/rooms", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ name, userId: currentUser.id })
+                }).then(() => queryClient.invalidateQueries({ queryKey: ["/api/rooms"] }));
+              }
+            }}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        )}
       </div>
       
       <div className="flex-1 overflow-y-auto mobile-scroll-area">

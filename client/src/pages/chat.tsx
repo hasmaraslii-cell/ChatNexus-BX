@@ -4,28 +4,38 @@ import RoomSidebar from "@/components/room-sidebar";
 import MainChatArea from "@/components/main-chat-area";
 import UserListSidebar from "@/components/user-list-sidebar";
 import ProfileEditModal from "@/components/profile-edit-modal";
-
-import MobileMenu from "@/components/mobile-menu";
+import { useAuth } from "@/hooks/use-auth";
+import { redirectToLogin } from "@/lib/auth-utils";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Users, Hash } from "lucide-react";
+import { Users, Hash } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { User, Room, MessageWithUser } from "@shared/schema";
 
 export default function Chat() {
+  const { user: authUser, isLoading: authLoading, isAuthenticated } = useAuth();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
-  const [showRegistration, setShowRegistration] = useState(true);
   const [profileEditUser, setProfileEditUser] = useState<User | null>(null);
 
   const [showRoomSidebar, setShowRoomSidebar] = useState(false);
   const [showUserSidebar, setShowUserSidebar] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<MessageWithUser | null>(null);
 
-  
+  const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      redirectToLogin(toast);
+    } else if (authUser) {
+      setCurrentUser(authUser as any);
+    }
+  }, [authLoading, isAuthenticated, authUser, toast]);
+
   const startDMMutation = useMutation({
     mutationFn: async (targetUser: User) => {
       if (!currentUser) throw new Error('Kullanıcı girişi gerekli');
@@ -79,111 +89,43 @@ export default function Chat() {
     }
     startDMMutation.mutate(targetUser);
   };
-  
-  const isMobile = useIsMobile();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
-  // Removed permissions modal - not needed anymore
 
   const { data: rooms } = useQuery({
     queryKey: ["/api/rooms"],
     enabled: !!currentUser,
-    staleTime: 30000, // Cache rooms for 30 seconds
+    staleTime: 30000,
   });
 
   const { data: onlineUsers, refetch: refetchUsers } = useQuery({
     queryKey: ["/api/users/online"],
     enabled: !!currentUser,
-    refetchInterval: isMobile ? 45000 : 30000, // Further reduced frequency  
-    staleTime: isMobile ? 35000 : 25000, // Longer cache
+    refetchInterval: isMobile ? 45000 : 30000,
+    staleTime: isMobile ? 35000 : 25000,
   });
 
   const { data: offlineUsers } = useQuery({
     queryKey: ["/api/users/offline"],
     enabled: !!currentUser,
-    refetchInterval: isMobile ? 180000 : 120000, // Much slower refresh
-    staleTime: isMobile ? 120000 : 90000, // Longer cache
+    refetchInterval: isMobile ? 180000 : 120000,
+    staleTime: isMobile ? 120000 : 90000,
   });
 
-  // Set default room when rooms are loaded
   useEffect(() => {
     if (rooms && Array.isArray(rooms) && rooms.length > 0 && !currentRoom) {
-      const generalRoom = rooms.find((room: Room) => room.name === "genel-sohbet") || rooms[0];
+      const generalRoom = rooms.find((room: Room) => room.name === "💬｜sohbet") || rooms[0];
       setCurrentRoom(generalRoom);
     }
   }, [rooms, currentRoom]);
-
-  // Check if user is already registered (auto-login)
-  useEffect(() => {
-    const savedUser = localStorage.getItem("ibx-user");
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        setCurrentUser(user);
-        setShowRegistration(false);
-        
-        // Update user status to online automatically
-        fetch(`/api/users/${user.id}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'online' })
-        }).catch(console.error);
-        
-      } catch (error) {
-        localStorage.removeItem("ibx-user");
-      }
-    }
-  }, []);
-
-  // Sync current user from localStorage periodically (in case updated by ProfileEditModal)
-  useEffect(() => {
-    const syncCurrentUser = () => {
-      const savedUser = localStorage.getItem("ibx-user");
-      if (savedUser && currentUser) {
-        try {
-          const user = JSON.parse(savedUser);
-          if (user.id === currentUser.id && JSON.stringify(user) !== JSON.stringify(currentUser)) {
-            setCurrentUser(user);
-          }
-        } catch (error) {
-          // Ignore JSON parse errors
-        }
-      }
-    };
-
-    const interval = setInterval(syncCurrentUser, 10000); // Reduced frequency to 10 seconds
-    return () => clearInterval(interval);
-  }, [currentUser]);
-
-  const handleUserRegistration = (user: User) => {
-    setCurrentUser(user);
-    setShowRegistration(false);
-    localStorage.setItem("ibx-user", JSON.stringify(user));
-    refetchUsers();
-  };
 
   const handleRoomChange = (room: Room) => {
     setCurrentRoom(room);
   };
 
   const handleLogout = () => {
-    if (currentUser) {
-      // Update user status to offline before logging out
-      fetch(`/api/users/${currentUser.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'offline' })
-      }).catch(console.error);
-    }
-    localStorage.removeItem("ibx-user");
-    setCurrentUser(null);
-    setCurrentRoom(null);
-    setShowRegistration(true);
+    window.location.href = "/api/logout";
   };
 
   const handleProfileUpdate = (updatedUser: User) => {
-    // Update the current user state immediately to reflect changes in sidebar
     if (currentUser && updatedUser.id === currentUser.id) {
       setCurrentUser(updatedUser);
     }
@@ -197,11 +139,6 @@ export default function Chat() {
     }
   };
 
-
-
-  // Room reordering mutation
-
-
   const handleReply = useCallback((message: MessageWithUser) => {
     setReplyToMessage(message);
   }, []);
@@ -210,27 +147,25 @@ export default function Chat() {
     setReplyToMessage(null);
   }, []);
 
-  if (showRegistration) {
-    return <UserRegistrationModal onUserCreated={handleUserRegistration} />;
-  }
-
-  if (!currentUser || !currentRoom) {
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--discord-darker)]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white">Yükleniyor...</p>
+          <p className="text-white">Chat Nexus Yükleniyor...</p>
         </div>
       </div>
     );
   }
 
+  if (!currentUser || !currentRoom) {
+    return null;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden relative">
-      {/* Mobile Navigation Bar - Top */}
       {isMobile && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-[var(--discord-darker)] border-b border-[var(--discord-dark)] flex items-center justify-between px-4 py-2">
-          {/* Left Menu Button - Rooms */}
           <Button
             variant="ghost"
             size="sm"
@@ -242,7 +177,6 @@ export default function Chat() {
             <Hash className="w-5 h-5" />
           </Button>
 
-          {/* Center - Current Room */}
           <div className="flex items-center space-x-2 flex-1 justify-center">
             <Hash className="w-4 h-4 text-[var(--discord-light)]/70" />
             <span className="text-[var(--discord-light)] font-medium truncate">
@@ -250,7 +184,6 @@ export default function Chat() {
             </span>
           </div>
 
-          {/* Right Menu Button - Users */}
           <Button
             variant="ghost"
             size="sm"
@@ -264,7 +197,6 @@ export default function Chat() {
         </div>
       )}
 
-      {/* Room Sidebar */}
       <div className={`${
         isMobile 
           ? `fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 ${
@@ -282,7 +214,6 @@ export default function Chat() {
         />
       </div>
 
-      {/* Main Chat Area */}
       <div className={`flex-1 flex flex-col overflow-hidden ${isMobile ? 'pt-12' : ''}`}>
         <MainChatArea
           currentRoom={currentRoom}
@@ -294,7 +225,6 @@ export default function Chat() {
         />
       </div>
 
-      {/* User List Sidebar */}
       <div className={`${
         isMobile 
           ? `fixed inset-y-0 right-0 z-40 transform transition-transform duration-300 ${
@@ -311,7 +241,6 @@ export default function Chat() {
         />
       </div>
 
-      {/* Mobile Overlay */}
       {isMobile && (showRoomSidebar || showUserSidebar) && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-30"
@@ -323,17 +252,12 @@ export default function Chat() {
         />
       )}
 
-      {/* Profile Edit Modal */}
       <ProfileEditModal
         user={profileEditUser}
         isOpen={!!profileEditUser}
         onClose={() => setProfileEditUser(null)}
         onProfileUpdate={handleProfileUpdate}
       />
-
-
-
-
     </div>
   );
 }

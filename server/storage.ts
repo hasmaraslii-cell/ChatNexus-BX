@@ -131,9 +131,11 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values({
       username: insertUser.username,
+      password: insertUser.password || null,
+      displayName: insertUser.displayName || insertUser.username,
       profileImage: insertUser.profileImage || null,
       status: insertUser.status || "online",
-      isAdmin: false,
+      isAdmin: insertUser.isAdmin || false,
     }).returning();
     return user;
   }
@@ -558,9 +560,11 @@ export class MemStorage implements IStorage {
     const user: User = { 
       id,
       username: insertUser.username,
+      password: insertUser.password || null,
+      displayName: insertUser.displayName || insertUser.username,
       profileImage: insertUser.profileImage || null,
       status: insertUser.status || "online",
-      isAdmin: false, // Artık admin sistemi yok
+      isAdmin: insertUser.isAdmin || false,
       lastSeen: new Date(),
       bannedUntil: null,
     };

@@ -35,6 +35,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
   const [isTyping, setIsTyping] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
   const [showUserSuggestions, setShowUserSuggestions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [suggestionUsers, setSuggestionUsers] = useState<User[]>([]);
@@ -44,6 +45,60 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { sendMessageNotification } = useNotifications(currentUser);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunks.current = [];
+      
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunks.current.push(e.data);
+      };
+      
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('files', audioBlob, `voice_${Date.now()}.webm`);
+        
+        try {
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+          });
+          const uploadResults = await uploadRes.json();
+          const fileInfo = uploadResults[0];
+          
+          await apiRequest("POST", "/api/messages", {
+            roomId: currentRoom.id,
+            userId: currentUser.id,
+            messageType: 'voice',
+            filePath: fileInfo.path,
+            fileName: 'Sesli Mesaj',
+            fileSize: fileInfo.size
+          });
+          
+          toast({ title: "Başarılı", description: "Sesli mesaj gönderildi" });
+        } catch (err) {
+          toast({ title: "Hata", description: "Sesli mesaj gönderilemedi", variant: "destructive" });
+        }
+      };
+      
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+    } catch (err) {
+      toast({ title: "Hata", description: "Mikrofon erişimi reddedildi", variant: "destructive" });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setMediaRecorder(null);
+    }
+  };
 
   const { data: messages, refetch: refetchMessages } = useQuery({
     queryKey: ["/api/rooms", currentRoom.id, "messages"],

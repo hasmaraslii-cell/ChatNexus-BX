@@ -1,10 +1,30 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Create admin account if it doesn't exist
+(async () => {
+  try {
+    const admin = await storage.getUserByUsername("raith1905");
+    if (!admin) {
+      await storage.createUser({
+        username: "raith1905",
+        password: "password123", // Kullanıcı girişte değiştirmeli
+        displayName: "Raith",
+        isAdmin: true,
+        status: "online"
+      });
+      console.log("Admin account created: raith1905");
+    }
+  } catch (err) {
+    console.error("Failed to create admin account:", err);
+  }
+})();
 
 app.use((req, res, next) => {
   const start = Date.now();

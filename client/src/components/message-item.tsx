@@ -467,22 +467,27 @@ export default function MessageItem({ message, currentUser, onReply, allMessages
           </div>
         )}
 
-        <div className="flex items-baseline space-x-2 mb-1">
+        <div className="flex items-center gap-2 mb-1">
           <span 
-            className="font-semibold text-[var(--discord-light)] hover:underline cursor-pointer"
+            className="font-bold text-white hover:underline cursor-pointer"
             onClick={() => {
               if (onStartDM && currentUser?.id !== message.user.id) {
                 onStartDM(message.user);
               }
             }}
           >
-            {message.user.username}
+            {message.user.displayName || message.user.username}
           </span>
-          <span className="text-xs text-[var(--discord-light)]/50">
+          {message.user.isAdmin && (
+            <span className="bg-primary/20 text-primary text-[10px] px-1.5 py-0.5 rounded font-bold border border-primary/30 uppercase tracking-wider">
+              ADMIN
+            </span>
+          )}
+          <span className="text-[var(--discord-light)]/50 text-[11px]">
             {formatTime(message.createdAt)}
           </span>
           {message.editedAt && (
-            <span className="text-xs text-[var(--discord-light)]/30">(düzenlendi)</span>
+            <span className="text-[var(--discord-light)]/30 text-[10px]">(düzenlendi)</span>
           )}
         </div>
         

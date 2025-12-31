@@ -41,7 +41,13 @@ const upload = multer({
   }
 });
 
+import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup Replit Auth
+  await setupAuth(app);
+  registerAuthRoutes(app);
+
   // User routes
   app.post("/api/users", async (req, res) => {
     try {
