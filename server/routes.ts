@@ -3,276 +3,61 @@ import express from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
 import path from "path";
+import session from "express-session";
 import { storage } from "./storage";
 import { insertUserSchema, insertMessageSchema, insertRoomSchema } from "@shared/schema";
 import { z } from "zod";
 import { nexaBot } from "./nexabot";
 
-// Configure multer for file uploads
-const upload = multer({
-  dest: 'uploads/',
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
-    files: 20, // Allow up to 20 files at once
-  },
-  fileFilter: (req, file, cb) => {
-    // Allow images, videos, documents, archives, and audio files
-    const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|mov|avi|mkv|pdf|doc|docx|txt|zip|rar|webm|mp3|wav|ogg|m4a/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    
-    // Allow audio mimetypes for voice messages
-    const audioTypes = /audio\/(webm|mpeg|mp4|wav|ogg|x-wav|x-m4a)/;
-    const videoTypes = /video\/(mp4|webm|quicktime|x-msvideo|x-matroska)/;
-    const imageTypes = /image\/(jpeg|jpg|png|gif|webp)/;
-    const docTypes = /application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|zip|x-rar-compressed)/;
-    const textTypes = /text\/plain/;
-    
-    const mimetype = audioTypes.test(file.mimetype) || 
-                     videoTypes.test(file.mimetype) || 
-                     imageTypes.test(file.mimetype) || 
-                     docTypes.test(file.mimetype) || 
-                     textTypes.test(file.mimetype);
-    
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Desteklenmeyen dosya türü'));
-    }
-  }
-});
-
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
-
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup Replit Auth
-  await setupAuth(app);
-  registerAuthRoutes(app);
+  // Session setup
+  app.use(
+    session({
+      secret: "chat-nexus-secret",
+      resave: false,
+      saveUninitialized: false,
+      cookie: { secure: false }, // Set to true if using HTTPS
+    })
+  );
 
-  // User routes
-  app.post("/api/users", async (req, res) => {
+  // Auth routes
+  app.post("/api/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      
-      // Check if username already exists
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
         return res.status(400).json({ message: "Bu kullanıcı adı zaten kullanılıyor" });
       }
-      
       const user = await storage.createUser(userData);
-      
-      // Send a random welcome message to the general room
-      const welcomeMessages = [
-        `Vahşi bir @${userData.username} belirdi!`,
-        `@${userData.username} spawn oldu.`,
-        `@${userData.username} oyuna giriş yaptı.`,
-        `@${userData.username} portaldan içeri düştü.`,
-        `@${userData.username} uzay-zamanı yararak geldi.`,
-        `Partiye yeni bir üye katıldı: @${userData.username}`,
-        `@${userData.username} başarıyla sunucuya yüklendi.`,
-        `@${userData.username}, evrende yeni bir maceraya başladı.`,
-        `Duyuru: @${userData.username} sunucuya iniş yaptı.`,
-        `Sistem mesajı: @${userData.username} artık aramızda.`,
-        `@${userData.username}, boyutlar arası yolculuğunu tamamladı.`,
-        `[GÜNCELLEME]: Yeni karakter eklendi: @${userData.username}`,
-        `@${userData.username} geldi, internet yavaşladı.`,
-        `@${userData.username} geldi, herkes cool davranın.`,
-        `@${userData.username} katıldı, kaos seviyesi +1.`
-      ];
-      
-      const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-      
-      // Don't send welcome message for DM creation or general room
-      // Users will be welcomed naturally in chat
-      
+      (req.session as any).userId = user.id;
       res.json(user);
     } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Kullanıcı oluşturulamadı" });
+      res.status(400).json({ message: error instanceof Error ? error.message : "Kayıt başarısız" });
     }
   });
 
-  app.get("/api/users", async (req, res) => {
-    try {
-      const users = await storage.getAllUsers();
-      res.json(users);
-    } catch (error) {
-      res.status(500).json({ message: "Kullanıcılar alınamadı" });
+  app.post("/api/login", async (req, res) => {
+    const { username, password } = req.body;
+    const user = await storage.getUserByUsername(username);
+    if (!user || user.password !== password) {
+      return res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
     }
+    (req.session as any).userId = user.id;
+    res.json(user);
   });
 
-  app.get("/api/users/online", async (req, res) => {
-    try {
-      const users = await storage.getOnlineUsers();
-      res.json(users);
-    } catch (error) {
-      res.status(500).json({ message: "Çevrimiçi kullanıcılar alınamadı" });
-    }
+  app.post("/api/logout", (req, res) => {
+    req.session.destroy(() => {
+      res.json({ message: "Çıkış yapıldı" });
+    });
   });
 
-  app.get("/api/users/offline", async (req, res) => {
-    try {
-      const users = await storage.getOfflineUsers();
-      res.json(users);
-    } catch (error) {
-      res.status(500).json({ message: "Çevrimdışı kullanıcılar alınamadı" });
-    }
-  });
-
-  app.patch("/api/users/:id/profile", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { username, profileImage } = req.body;
-      
-      if (!username) {
-        return res.status(400).json({ message: "Kullanıcı adı gerekli" });
-      }
-      
-      // Check if username is taken by another user
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser && existingUser.id !== id) {
-        return res.status(400).json({ message: "Bu kullanıcı adı zaten kullanılıyor" });
-      }
-      
-      const user = await storage.updateUserProfile(id, username, profileImage);
-      if (!user) {
-        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
-      }
-      
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ message: "Profil güncellenemedi" });
-    }
-  });
-
-  app.patch("/api/users/:id/ban", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { duration } = req.body; // minutes, "permanent", or null to unban
-      
-      let bannedUntil: Date | null = null;
-      if (duration === "permanent") {
-        bannedUntil = new Date("2099-12-31"); // Far future date
-      } else if (duration && typeof duration === "number") {
-        bannedUntil = new Date(Date.now() + duration * 60 * 1000);
-      }
-      
-      const user = await storage.banUser(id, bannedUntil);
-      if (!user) {
-        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
-      }
-      
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ message: "Kullanıcı banlanamadı" });
-    }
-  });
-
-  app.patch("/api/users/:id/status", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { status } = req.body;
-      
-      if (!["online", "away", "busy"].includes(status)) {
-        return res.status(400).json({ message: "Geçersiz durum" });
-      }
-      
-      const user = await storage.updateUserStatus(id, status);
-      if (!user) {
-        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
-      }
-      
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ message: "Kullanıcı durumu güncellenemedi" });
-    }
-  });
-
-  // Room routes
-  app.get("/api/rooms", async (req, res) => {
-    try {
-      const rooms = await storage.getAllRooms();
-      res.json(rooms);
-    } catch (error) {
-      res.status(500).json({ message: "Odalar alınamadı" });
-    }
-  });
-
-  app.get("/api/rooms/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const room = await storage.getRoom(id);
-      if (!room) {
-        return res.status(404).json({ message: "Oda bulunamadı" });
-      }
-      res.json(room);
-    } catch (error) {
-      res.status(500).json({ message: "Oda alınamadı" });
-    }
-  });
-
-  // Admin: Create new room
-  app.post("/api/rooms", async (req, res) => {
-    try {
-      const roomData = insertRoomSchema.parse(req.body);
-      const { userId } = req.body;
-      
-      // Check if user is admin
-      const user = await storage.getUser(userId);
-      if (!user || !user.isAdmin) {
-        return res.status(403).json({ message: "Sadece yöneticiler oda oluşturabilir" });
-      }
-      
-      // Check if room name already exists
-      const existingRoom = await storage.getRoomByName(roomData.name);
-      if (existingRoom) {
-        return res.status(400).json({ message: "Bu oda adı zaten kullanılıyor" });
-      }
-      
-      const room = await storage.createRoom(roomData);
-      res.json(room);
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Oda oluşturulamadı" });
-    }
-  });
-
-  // Admin: Delete room
-  app.delete("/api/rooms/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { userId } = req.body;
-      
-      // Check if user is admin
-      const user = await storage.getUser(userId);
-      if (!user || !user.isAdmin) {
-        return res.status(403).json({ message: "Sadece yöneticiler oda silebilir" });
-      }
-      
-      const success = await storage.deleteRoom(id);
-      if (!success) {
-        return res.status(404).json({ message: "Oda bulunamadı" });
-      }
-      
-      res.json({ message: "Oda silindi" });
-    } catch (error) {
-      res.status(500).json({ message: "Oda silinemedi" });
-    }
-  });
-
-  // Admin: Reorder rooms
-  app.put("/api/rooms/reorder", async (req, res) => {
-    try {
-      const { rooms } = req.body;
-      
-      // For this basic implementation, just acknowledge the reorder
-      // In production, you'd update room order in database
-      if (!Array.isArray(rooms)) {
-        return res.status(400).json({ message: "Geçersiz oda listesi" });
-      }
-      
-      res.json({ message: "Odalar yeniden sıralandı" });
-    } catch (error) {
-      res.status(500).json({ message: "Odalar yeniden sıralanamadı" });
-    }
+  app.get("/api/user", async (req, res) => {
+    const userId = (req.session as any).userId;
+    if (!userId) return res.status(401).json({ message: "Giriş yapılmadı" });
+    const user = await storage.getUser(userId);
+    if (!user) return res.status(401).json({ message: "Kullanıcı bulunamadı" });
+    res.json(user);
   });
 
   // Message routes
@@ -290,6 +75,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(messages);
     } catch (error) {
       res.status(500).json({ message: "Mesajlar alınamadı" });
+    }
+  });
+
+  // Configure multer for file uploads
+  const upload = multer({
+    dest: 'uploads/',
+    limits: {
+      fileSize: 50 * 1024 * 1024, // 50MB limit
+      files: 20, // Allow up to 20 files at once
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|mov|avi|mkv|pdf|doc|docx|txt|zip|rar|webm|mp3|wav|ogg|m4a/;
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      const mimetype = file.mimetype.startsWith('audio/') || 
+                       file.mimetype.startsWith('video/') || 
+                       file.mimetype.startsWith('image/') || 
+                       /application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|zip|x-rar-compressed)/.test(file.mimetype) ||
+                       file.mimetype === 'text/plain';
+      
+      if (mimetype && extname) {
+        return cb(null, true);
+      } else {
+        cb(new Error('Desteklenmeyen dosya türü'));
+      }
     }
   });
 

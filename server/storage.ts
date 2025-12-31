@@ -109,6 +109,8 @@ export class DatabaseStorage implements IStorage {
 
     const [bot] = await db.insert(users).values({
       username: "NexaBot",
+      password: null,
+      displayName: "NexaBot",
       profileImage: "https://i.imgur.com/2FDBAwR.png",
       status: "online",
       isAdmin: true,
@@ -534,6 +536,8 @@ export class MemStorage implements IStorage {
     const bot: User = {
       id: randomUUID(),
       username: "NexaBot",
+      password: null,
+      displayName: "NexaBot",
       profileImage: "https://i.imgur.com/2FDBAwR.png",
       status: "online",
       isAdmin: true,
