@@ -131,9 +131,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const isAdmin = insertUser.username === "raith1905";
+    const normalizedUsername = insertUser.username.toLowerCase();
+    const isAdmin = normalizedUsername === "raith1905";
     const [user] = await db.insert(users).values({
-      username: insertUser.username,
+      username: normalizedUsername,
       password: insertUser.password || null,
       displayName: insertUser.displayName || insertUser.username,
       profileImage: insertUser.profileImage || null,
@@ -562,10 +563,11 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const isAdmin = insertUser.username === "raith1905";
+    const normalizedUsername = insertUser.username.toLowerCase();
+    const isAdmin = normalizedUsername === "raith1905";
     const user: User = { 
       id,
-      username: insertUser.username,
+      username: normalizedUsername,
       password: insertUser.password || null,
       displayName: insertUser.displayName || insertUser.username,
       profileImage: insertUser.profileImage || null,

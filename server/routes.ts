@@ -13,10 +13,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session setup
   app.use(
     session({
-      secret: "chat-nexus-secret",
-      resave: false,
-      saveUninitialized: false,
-      cookie: { secure: false }, // Set to true if using HTTPS
+      secret: "chat-nexus-secret-v2",
+      resave: true,
+      saveUninitialized: true,
+      cookie: { 
+        secure: false,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      },
     })
   );
 
@@ -24,30 +27,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      const existingUser = await storage.getUserByUsername(userData.username);
+      const username = userData.username.toLowerCase().trim();
+      const existingUser = await storage.getUserByUsername(username);
+      
       if (existingUser) {
         return res.status(400).json({ message: "Bu kullanıcı adı zaten kullanılıyor" });
       }
-      const user = await storage.createUser(userData);
+
+      const user = await storage.createUser({
+        ...userData,
+        username
+      });
+      
       (req.session as any).userId = user.id;
-      req.session.save(() => {
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Oturum kaydedilemedi" });
+        }
         res.json(user);
       });
     } catch (error) {
+      console.error("Register error:", error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Kayıt başarısız" });
     }
   });
 
   app.post("/api/login", async (req, res) => {
-    const { username, password } = req.body;
-    const user = await storage.getUserByUsername(username);
-    if (!user || user.password !== password) {
-      return res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
+    try {
+      const { username, password } = req.body;
+      const normalizedUsername = username.toLowerCase().trim();
+      
+      console.log(`Login attempt for: ${normalizedUsername}`);
+      const user = await storage.getUserByUsername(normalizedUsername);
+      
+      if (!user) {
+        console.log(`User not found: ${normalizedUsername}`);
+        return res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
+      }
+
+      // Check password (trimming to be safe if there are hidden characters)
+      if (user.password?.trim() !== password?.trim()) {
+        console.log(`Invalid password for: ${normalizedUsername}. Expected: ${user.password}, Got: ${password}`);
+        return res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
+      }
+
+      (req.session as any).userId = user.id;
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session login error:", err);
+          return res.status(500).json({ message: "Giriş başarısız" });
+        }
+        console.log(`Login successful for: ${normalizedUsername}`);
+        res.json(user);
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Giriş sırasında bir hata oluştu" });
     }
-    (req.session as any).userId = user.id;
-    req.session.save(() => {
-      res.json(user);
-    });
   });
 
   app.post("/api/logout", (req, res) => {

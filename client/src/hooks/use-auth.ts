@@ -25,6 +25,7 @@ export function useAuth() {
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({ title: "Başarılı", description: "Giriş yapıldı" });
     },
     onError: (error: Error) => {
@@ -43,6 +44,7 @@ export function useAuth() {
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({ title: "Başarılı", description: "Hesap oluşturuldu" });
     },
     onError: (error: Error) => {
