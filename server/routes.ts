@@ -30,7 +30,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const user = await storage.createUser(userData);
       (req.session as any).userId = user.id;
-      res.json(user);
+      req.session.save(() => {
+        res.json(user);
+      });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Kayıt başarısız" });
     }
@@ -43,7 +45,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
     }
     (req.session as any).userId = user.id;
-    res.json(user);
+    req.session.save(() => {
+      res.json(user);
+    });
   });
 
   app.post("/api/logout", (req, res) => {
