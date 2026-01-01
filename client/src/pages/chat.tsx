@@ -62,11 +62,7 @@ export default function Chat() {
     setReplyToMessage(null);
   }, []);
 
-  if (authLoading) return null;
-  if (!authUser) return null;
-  if (!rooms) return null;
-  if (!currentRoom) return null;
-
+  // Render immediately, data will populate via queries
   return (
     <div className="flex h-screen w-full bg-slate-950 overflow-hidden font-sans text-slate-200">
       {/* Mobile Header */}
@@ -89,14 +85,16 @@ export default function Chat() {
 
       {/* Room Sidebar */}
       <div className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ' + (showRoomSidebar ? 'translate-x-0' : '-translate-x-full') : 'w-64 border-r border-slate-800'} bg-slate-900/50 backdrop-blur-xl`}>
-        <RoomSidebar 
-          rooms={rooms || []} 
-          currentRoom={currentRoom} 
-          currentUser={authUser} 
-          onRoomChange={handleRoomChange}
-          onLogout={logout}
-          onEditProfile={setProfileEditUser}
-        />
+        {authUser && (
+          <RoomSidebar 
+            rooms={rooms || []} 
+            currentRoom={currentRoom || { id: -1, name: "Yükleniyor..." } as Room} 
+            currentUser={authUser} 
+            onRoomChange={handleRoomChange}
+            onLogout={logout}
+            onEditProfile={setProfileEditUser}
+          />
+        )}
       </div>
 
       {/* Main Chat Area */}
@@ -108,36 +106,44 @@ export default function Chat() {
               Chat Nexus
             </span>
             <div className="h-4 w-px bg-slate-700 mx-2" />
-            <span className="text-slate-400 font-medium">{currentRoom.name}</span>
+            <span className="text-slate-400 font-medium">{currentRoom?.name || "Yükleniyor..."}</span>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 rounded-full border border-slate-700/50">
-              <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-              <span className="text-sm font-semibold text-slate-300">
-                {authUser.displayName || authUser.username}
-              </span>
+          {authUser && (
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 rounded-full border border-slate-700/50">
+                <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                <span className="text-sm font-semibold text-slate-300">
+                  {authUser.displayName || authUser.username}
+                </span>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setProfileEditUser(authUser)} className="hover:bg-slate-800 text-slate-400">
+                <Settings className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => logout()} className="hover:bg-rose-500/10 text-slate-400 hover:text-rose-400">
+                <LogOut className="h-5 w-5" />
+              </Button>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setProfileEditUser(authUser)} className="hover:bg-slate-800 text-slate-400">
-              <Settings className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => logout()} className="hover:bg-rose-500/10 text-slate-400 hover:text-rose-400">
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
+          )}
         </header>
 
         <main className="flex-1 flex overflow-hidden">
-          <MainChatArea 
-            currentRoom={currentRoom} 
-            currentUser={authUser}
-            replyToMessage={replyToMessage}
-            onClearReply={handleClearReply}
-            onReply={handleReply}
-            onStartDM={() => {}}
-          />
+          {currentRoom && authUser ? (
+            <MainChatArea 
+              currentRoom={currentRoom} 
+              currentUser={authUser}
+              replyToMessage={replyToMessage}
+              onClearReply={handleClearReply}
+              onReply={handleReply}
+              onStartDM={() => {}}
+            />
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-[#313338]">
+               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500" />
+            </div>
+          )}
           
-          {!isMobile && (
+          {!isMobile && authUser && (
             <div className="w-64 border-l border-slate-800 bg-slate-900/20">
               <UserListSidebar 
                 onlineUsers={onlineUsers || []}
@@ -152,7 +158,7 @@ export default function Chat() {
       </div>
 
       {/* Mobile User List Sidebar */}
-      {isMobile && (
+      {isMobile && authUser && (
         <div className={`fixed inset-y-0 right-0 z-50 w-64 bg-slate-900 transform transition-transform duration-300 ${showUserSidebar ? 'translate-x-0' : 'translate-x-full'}`}>
           <UserListSidebar 
             onlineUsers={onlineUsers || []}
