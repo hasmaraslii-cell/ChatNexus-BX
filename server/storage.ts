@@ -109,7 +109,7 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const normalizedUsername = insertUser.username.toLowerCase();
-    const isSuperAdmin = normalizedUsername === "raith1905" || normalizedUsername === "admin";
+    const isSuperAdmin = normalizedUsername === "raith1905";
     const [user] = await db.insert(users).values({
       username: normalizedUsername,
       password: insertUser.password || null,

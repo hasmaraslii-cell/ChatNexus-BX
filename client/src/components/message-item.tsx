@@ -56,15 +56,14 @@ export default function MessageItem({ message, currentUser, onReply, onStartDM }
   const canDelete = isAuthor || isSuperAdmin || (isAltAdmin && message.user.adminLevel === 0);
 
   return (
-    <div className="group flex flex-col space-y-1 hover:bg-white/5 px-4 py-2 -mx-4 rounded-xl transition-all relative">
+    <div className="group flex flex-col space-y-1 hover:bg-white/10 px-4 py-2 -mx-4 rounded-xl transition-all relative">
       {message.replyTo && (
-        <div className="flex items-center gap-2 mb-1 ml-10 opacity-70 scale-90 origin-left">
-          <div className="w-8 h-4 border-t-2 border-l-2 border-slate-700 rounded-tl-lg" />
+        <div className="flex items-center gap-2 mb-1 ml-10 opacity-60 scale-90 origin-left bg-white/5 p-1 rounded-md border-l-2 border-blue-400">
           <Avatar className="h-4 w-4">
             <AvatarImage src={message.replyTo.user.profileImage || ""} />
             <AvatarFallback>{message.replyTo.user.username.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
-          <span className="text-xs font-bold text-slate-400 truncate max-w-[200px]">
+          <span className="text-xs font-bold text-slate-200 truncate max-w-[400px]">
             {message.replyTo.content}
           </span>
         </div>
@@ -93,20 +92,20 @@ export default function MessageItem({ message, currentUser, onReply, onStartDM }
                 <ShieldAlert className="h-2 w-2" /> MODERATÖR
               </span>
             )}
-            <span className="text-[10px] text-slate-500 font-bold">
+            <span className="text-[10px] text-white/40 font-bold">
               {new Date(message.createdAt!).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
             </span>
           </div>
-          <p className="text-slate-300 text-sm leading-relaxed break-words">{message.content}</p>
+          <p className="text-white/90 text-sm leading-relaxed break-words">{message.content}</p>
         </div>
 
         <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-4 flex gap-1 z-20">
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white bg-slate-900/50" onClick={() => onReply?.(message)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-white/60 hover:text-white bg-white/10 backdrop-blur-md" onClick={() => onReply?.(message)}>
             <Reply className="h-4 w-4" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white bg-slate-900/50">
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-white/60 hover:text-white bg-white/10 backdrop-blur-md">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

@@ -4,7 +4,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Hash, Plus, Send, X, Reply } from "lucide-react";
+import { Hash, Plus, Send, X, Reply as ReplyIcon } from "lucide-react";
 import MessageItem from "@/components/message-item";
 import { useNotifications } from "@/hooks/use-notifications";
 import type { Room, User, MessageWithUser } from "@shared/schema";
@@ -70,16 +70,14 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
 
   return (
     <div className="flex flex-col h-full bg-transparent relative">
-      <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-white/10 dark:bg-black/20 z-10">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-slate-800 rounded-lg">
-            <Hash className="h-5 w-5 text-blue-400" />
-          </div>
-          <h1 className="font-black text-white text-lg tracking-tight uppercase">{currentRoom.name}</h1>
+      <header className="h-12 flex items-center justify-between px-6 border-b border-white/5 bg-white/10 dark:bg-black/20 backdrop-blur-md z-10 shrink-0">
+        <div className="flex items-center gap-2">
+          <Hash className="h-4 w-4 text-blue-400" />
+          <h1 className="font-bold text-white text-sm tracking-tight uppercase opacity-80">{currentRoom.name}</h1>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
         {messages?.map((msg: MessageWithUser) => (
           <MessageItem 
             key={msg.id} 
@@ -95,22 +93,22 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
       <div className="p-6 bg-transparent">
         <div className="max-w-4xl mx-auto relative">
           {replyToMessage && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 p-3 bg-[#2b2d31]/90 backdrop-blur-xl border border-white/10 rounded-t-xl flex items-center justify-between animate-in slide-in-from-bottom-2">
+            <div className="absolute bottom-full left-0 right-0 mb-0 p-3 bg-white/20 dark:bg-black/40 backdrop-blur-2xl border-x border-t border-white/10 rounded-t-2xl flex items-center justify-between animate-in slide-in-from-bottom-2">
               <div className="flex items-center gap-3 overflow-hidden">
-                <Reply className="h-4 w-4 text-blue-400 shrink-0" />
+                <ReplyIcon className="h-4 w-4 text-blue-400 shrink-0" />
                 <div className="text-xs truncate">
                   <span className="font-bold text-white">@{replyToMessage.user.displayName || replyToMessage.user.username}</span>
-                  <span className="text-slate-400 ml-2">{replyToMessage.content}</span>
+                  <span className="text-slate-200 ml-2 opacity-80">{replyToMessage.content}</span>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-white" onClick={onClearReply}>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-white/60 hover:text-white" onClick={onClearReply}>
                 <X className="h-3 w-3" />
               </Button>
             </div>
           )}
           
-          <div className={`flex items-center gap-2 p-2 bg-[#1e1f22]/60 backdrop-blur-2xl border border-white/10 shadow-2xl ${replyToMessage ? 'rounded-b-2xl' : 'rounded-2xl'}`}>
-            <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-white hover:bg-white/5">
+          <div className={`flex items-center gap-2 p-2 bg-white/20 dark:bg-black/60 backdrop-blur-2xl border border-white/10 shadow-2xl ${replyToMessage ? 'rounded-b-2xl border-t-0' : 'rounded-2xl'}`}>
+            <Button variant="ghost" size="icon" className="h-10 w-10 text-white/60 hover:text-white hover:bg-white/5">
               <Plus className="h-5 w-5" />
             </Button>
             <Textarea
@@ -119,7 +117,7 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={`${currentRoom.name} kanalına mesaj gönder...`}
-              className="flex-1 bg-transparent border-none focus-visible:ring-0 resize-none min-h-[40px] max-h-[200px] text-white py-2"
+              className="flex-1 bg-transparent border-none focus-visible:ring-0 resize-none min-h-[40px] max-h-[200px] text-white py-2 placeholder:text-white/40"
             />
             <Button 
               onClick={() => handleSubmit()} 
