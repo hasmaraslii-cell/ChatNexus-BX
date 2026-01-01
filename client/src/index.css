@@ -78,31 +78,42 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
   }
-}
 
-@layer utilities {
-  .glass {
-    @apply bg-white/20 dark:bg-black/20 backdrop-blur-xl border border-white/10 dark:border-white/5;
-  }
-
-  .glass-card {
-    @apply bg-white/40 dark:bg-black/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl;
-  }
-
-  .nexus-gradient {
-    background: linear-gradient(135deg, #c6dfff 0%, #f7c6e9 100%);
-  }
-
-  .dark .nexus-gradient {
-    background: linear-gradient(135deg, #1e1f22 0%, #2b2d31 100%);
-  }
-}
-
-@layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
   }
+}
+
+.glass {
+  background-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-card {
+  background-color: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.dark .glass-card {
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nexus-gradient {
+  background: linear-gradient(135deg, #c6dfff 0%, #f7c6e9 100%) !important;
+}
+
+.dark .nexus-gradient {
+  background: linear-gradient(135deg, #1e1f22 0%, #2b2d31 100%) !important;
 }

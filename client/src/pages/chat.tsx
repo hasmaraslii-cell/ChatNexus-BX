@@ -39,8 +39,8 @@ export default function Chat() {
   if (!user) return null;
 
   return (
-    <div className="flex h-screen w-full nexus-gradient overflow-hidden p-4 gap-4">
-      <div className="w-72 glass-card rounded-3xl overflow-hidden shrink-0">
+    <div className="flex h-screen w-full nexus-gradient overflow-hidden p-4 gap-4 box-border">
+      <div className="w-72 glass-card rounded-3xl overflow-hidden flex-shrink-0">
         <RoomSidebar
           rooms={rooms}
           currentRoom={currentRoom}
@@ -51,7 +51,7 @@ export default function Chat() {
         />
       </div>
 
-      <div className="flex-1 glass-card rounded-3xl overflow-hidden flex flex-col">
+      <div className="flex-1 glass-card rounded-3xl overflow-hidden flex flex-col min-w-0">
         {currentRoom && (
           <MainChatArea
             currentRoom={currentRoom}
@@ -64,7 +64,7 @@ export default function Chat() {
         )}
       </div>
 
-      <div className="w-64 glass-card rounded-3xl overflow-hidden shrink-0">
+      <div className="w-64 glass-card rounded-3xl overflow-hidden flex-shrink-0">
         <UserList onStartDM={(targetUser) => startDMMutation.mutate(targetUser)} />
       </div>
 
