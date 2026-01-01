@@ -42,11 +42,11 @@ export default function Chat() {
   });
 
   useEffect(() => {
-    if (rooms && rooms.length > 0 && !currentRoom) {
+    if (rooms && rooms.length > 0) {
       const generalRoom = rooms.find((r: Room) => r.name === "💬｜sohbet") || rooms[0];
       setCurrentRoom(generalRoom);
     }
-  }, [rooms, currentRoom]);
+  }, [rooms]);
 
   const handleRoomChange = (room: Room) => {
     setCurrentRoom(room);
@@ -63,16 +63,37 @@ export default function Chat() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 font-sans">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 font-sans">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white font-medium">Chat Nexus Yükleniyor...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500 mx-auto mb-4 shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+          <p className="text-blue-400 font-medium tracking-wide animate-pulse">Nexus Yükleniyor...</p>
         </div>
       </div>
     );
   }
 
-  if (!authUser || !currentRoom) return null;
+  if (!authUser) return null;
+
+  if (!currentRoom && rooms && rooms.length > 0) {
+    // We have rooms but none selected yet, don't show blank screen
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 font-sans">
+        <div className="animate-pulse text-blue-400">Oda yükleniyor...</div>
+      </div>
+    );
+  }
+
+  if (!currentRoom) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 font-sans">
+        <div className="text-center p-8 bg-slate-900/50 rounded-2xl border border-slate-800 backdrop-blur-xl">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-pink-500 mx-auto mb-4"></div>
+          <p className="text-slate-300 font-medium">Odalar hazırlanıyor...</p>
+          <p className="text-slate-500 text-sm mt-2">Lütfen bekleyin...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full bg-slate-950 overflow-hidden font-sans text-slate-200">
