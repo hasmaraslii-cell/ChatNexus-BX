@@ -42,11 +42,12 @@ export default function Chat() {
   });
 
   useEffect(() => {
-    if (rooms && rooms.length > 0) {
+    // Force set room if rooms exist and currentRoom is not set
+    if (rooms && rooms.length > 0 && !currentRoom) {
       const generalRoom = rooms.find((r: Room) => r.name === "💬｜sohbet") || rooms[0];
       setCurrentRoom(generalRoom);
     }
-  }, [rooms]);
+  }, [rooms, currentRoom]);
 
   const handleRoomChange = (room: Room) => {
     setCurrentRoom(room);
@@ -66,7 +67,7 @@ export default function Chat() {
       <div className="min-h-screen flex items-center justify-center bg-slate-950 font-sans">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500 mx-auto mb-4 shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
-          <p className="text-blue-400 font-medium tracking-wide animate-pulse">Nexus Yükleniyor...</p>
+          <p className="text-blue-400 font-medium tracking-wide animate-pulse uppercase text-xs letter-spacing-widest">Nexus Yükleniyor</p>
         </div>
       </div>
     );
@@ -74,22 +75,33 @@ export default function Chat() {
 
   if (!authUser) return null;
 
-  if (!currentRoom && rooms && rooms.length > 0) {
-    // We have rooms but none selected yet, don't show blank screen
+  // If rooms is undefined or null, we might be waiting for the query
+  if (!rooms) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 font-sans">
-        <div className="animate-pulse text-blue-400">Oda yükleniyor...</div>
+        <div className="text-center">
+          <div className="animate-pulse flex space-x-2 justify-center mb-4">
+            <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+            <div className="h-2 w-2 bg-blue-500 rounded-full animate-delay-100"></div>
+            <div className="h-2 w-2 bg-blue-500 rounded-full animate-delay-200"></div>
+          </div>
+          <p className="text-slate-500 font-medium text-xs uppercase tracking-[0.2em]">Veriler Alınıyor</p>
+        </div>
       </div>
     );
   }
 
+  // If currentRoom is not set, but rooms are available, we'll wait for the useEffect
   if (!currentRoom) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 font-sans">
-        <div className="text-center p-8 bg-slate-900/50 rounded-2xl border border-slate-800 backdrop-blur-xl">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-pink-500 mx-auto mb-4"></div>
-          <p className="text-slate-300 font-medium">Odalar hazırlanıyor...</p>
-          <p className="text-slate-500 text-sm mt-2">Lütfen bekleyin...</p>
+        <div className="text-center p-8 bg-slate-900/50 rounded-3xl border border-white/5 backdrop-blur-3xl shadow-2xl">
+          <div className="relative h-16 w-16 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full border-t-2 border-blue-500 animate-spin"></div>
+            <div className="absolute inset-2 rounded-full border-t-2 border-pink-500 animate-spin-slow"></div>
+          </div>
+          <p className="text-slate-200 font-bold text-lg">Nexus Hazırlanıyor</p>
+          <p className="text-slate-500 text-sm mt-2 font-medium italic">Sohbet evrenine bağlanıyorsunuz...</p>
         </div>
       </div>
     );
