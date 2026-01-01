@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Lock, User as UserIcon } from "lucide-react";
+import { Shield, Lock, User as UserIcon, Camera, X } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function AuthPage() {
   const { user, login, register, isLoggingIn, isRegistering } = useAuth();
@@ -14,6 +15,8 @@ export default function AuthPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (user) {
     setLocation("/");
@@ -27,7 +30,18 @@ export default function AuthPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    await register({ username, password, displayName });
+    await register({ username, password, displayName, profileImage });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const nexusLogo = "https://i.imgur.com/DvliwXN.png";
@@ -90,6 +104,41 @@ export default function AuthPage() {
             
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-4 mt-2">
+                <div className="flex flex-col items-center gap-4 mb-6">
+                  <div className="relative group">
+                    <Avatar className="h-24 w-24 border-2 border-pink-500/20 shadow-xl overflow-hidden">
+                      <AvatarImage src={profileImage} className="object-cover" />
+                      <AvatarFallback className="bg-slate-100 dark:bg-slate-800">
+                        <UserIcon className="h-10 w-10 text-slate-400" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer"
+                    >
+                      <Camera className="h-8 w-8 text-white" />
+                    </button>
+                    {profileImage && (
+                      <button
+                        type="button"
+                        onClick={() => setProfileImage("")}
+                        className="absolute -top-1 -right-1 bg-rose-500 text-white p-1 rounded-full shadow-lg hover:bg-rose-600 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                  <p className="text-xs text-slate-500 font-medium">Profil Resmi (Opsiyonel)</p>
+                </div>
+
                 <div className="space-y-2">
                   <Label className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">Görünen Ad</Label>
                   <div className="relative">
