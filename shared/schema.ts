@@ -13,6 +13,7 @@ export const users = pgTable("users", {
   profileImage: text("profile_image"),
   status: text("status").notNull().default("online"), // online, away, busy, offline
   isAdmin: boolean("is_admin").default(false),
+  adminLevel: integer("admin_level").default(0),
   lastSeen: timestamp("last_seen").defaultNow(),
   bannedUntil: timestamp("banned_until"),
 });

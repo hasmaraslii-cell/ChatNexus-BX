@@ -1,186 +1,78 @@
-import { useState, useEffect, useCallback } from "react";
-import MainChatArea from "@/components/main-chat-area";
-import UserListSidebar from "@/components/user-list-sidebar";
-import ProfileEditModal from "@/components/profile-edit-modal";
-import RoomSidebar from "@/components/room-sidebar";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import type { User, Room, MessageWithUser } from "@shared/schema";
-import { Button } from "@/components/ui/button";
-import { Hash, Users, LogOut, Settings } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Room, User, MessageWithUser } from "@shared/schema";
+import RoomSidebar from "@/components/room-sidebar";
+import MainChatArea from "@/components/main-chat-area";
+import UserList from "@/components/user-list";
+import ProfileEditModal from "@/components/profile-edit-modal";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Chat() {
-  const { user: authUser, isLoading: authLoading, logout } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
-  const [profileEditUser, setProfileEditUser] = useState<User | null>(null);
+  const [editingProfile, setEditingProfile] = useState<User | null>(null);
   const [replyToMessage, setReplyToMessage] = useState<MessageWithUser | null>(null);
-  const [showRoomSidebar, setShowRoomSidebar] = useState(false);
-  const [showUserSidebar, setShowUserSidebar] = useState(false);
-
-  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const nexusLogo = "https://i.imgur.com/DvliwXN.png";
 
-  const { data: rooms } = useQuery<Room[]>({
+  const { data: rooms = [] } = useQuery<Room[]>({
     queryKey: ["/api/rooms"],
-    enabled: !!authUser,
-  });
-
-  const { data: onlineUsers } = useQuery<User[]>({
-    queryKey: ["/api/users/online"],
-    enabled: !!authUser,
-    refetchInterval: 10000,
-  });
-
-  const { data: offlineUsers } = useQuery<User[]>({
-    queryKey: ["/api/users/offline"],
-    enabled: !!authUser,
-    refetchInterval: 30000,
   });
 
   useEffect(() => {
-    // Force set room if rooms exist and currentRoom is not set
-    if (rooms && rooms.length > 0 && !currentRoom) {
-      const generalRoom = rooms.find((r: Room) => r.name === "💬｜sohbet") || rooms[0];
-      setCurrentRoom(generalRoom);
+    if (rooms.length > 0 && !currentRoom) {
+      setCurrentRoom(rooms[0]);
     }
   }, [rooms, currentRoom]);
 
-  const handleRoomChange = (room: Room) => {
-    setCurrentRoom(room);
-    if (isMobile) setShowRoomSidebar(false);
-  };
+  const startDMMutation = useMutation({
+    mutationFn: async (otherUser: User) => {
+      const res = await apiRequest("POST", "/api/dm", { userId: otherUser.id });
+      return res.json();
+    },
+    onSuccess: (room) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dm", user?.id] });
+      setCurrentRoom(room);
+    },
+  });
 
-  const handleReply = useCallback((message: MessageWithUser) => {
-    setReplyToMessage(message);
-  }, []);
+  if (!user) return null;
 
-  const handleClearReply = useCallback(() => {
-    setReplyToMessage(null);
-  }, []);
-
-  // Render immediately, data will populate via queries
   return (
-    <div className="flex h-screen w-full bg-slate-950 overflow-hidden font-sans text-slate-200">
-      {/* Mobile Header */}
-      {isMobile && (
-        <div className="fixed top-0 left-0 right-0 h-14 z-50 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4">
-          <Button variant="ghost" size="icon" onClick={() => setShowRoomSidebar(!showRoomSidebar)}>
-            <Hash className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <img src={nexusLogo} alt="Logo" className="h-6 w-auto" />
-            <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-pink-400">
-              Nexus
-            </span>
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => setShowUserSidebar(!showUserSidebar)}>
-            <Users className="h-5 w-5" />
-          </Button>
-        </div>
-      )}
+    <div className="flex h-screen w-full nexus-gradient overflow-hidden p-4 gap-4">
+      <div className="w-72 glass-card rounded-3xl overflow-hidden shrink-0">
+        <RoomSidebar
+          rooms={rooms}
+          currentRoom={currentRoom}
+          currentUser={user}
+          onRoomChange={setCurrentRoom}
+          onLogout={() => logoutMutation.mutate()}
+          onEditProfile={setEditingProfile}
+        />
+      </div>
 
-      {/* Room Sidebar */}
-      <div className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ' + (showRoomSidebar ? 'translate-x-0' : '-translate-x-full') : 'w-64 border-r border-slate-800'} bg-slate-900/50 backdrop-blur-xl`}>
-        {authUser && (
-          <RoomSidebar 
-            rooms={rooms || []} 
-            currentRoom={currentRoom || { id: "loading", name: "Yükleniyor..." } as any} 
-            currentUser={authUser} 
-            onRoomChange={handleRoomChange}
-            onLogout={logout}
-            onEditProfile={setProfileEditUser}
+      <div className="flex-1 glass-card rounded-3xl overflow-hidden flex flex-col">
+        {currentRoom && (
+          <MainChatArea
+            currentRoom={currentRoom}
+            currentUser={user}
+            replyToMessage={replyToMessage}
+            onClearReply={() => setReplyToMessage(null)}
+            onReply={setReplyToMessage}
+            onStartDM={(targetUser) => startDMMutation.mutate(targetUser)}
           />
         )}
       </div>
 
-      {/* Main Chat Area */}
-      <div className={`flex-1 flex flex-col min-w-0 ${isMobile ? 'pt-14' : ''}`}>
-        <header className={`${isMobile ? 'hidden' : 'h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/30'}`}>
-          <div className="flex items-center gap-3">
-            <img src={nexusLogo} alt="Nexus" className="h-8 w-auto object-contain" />
-            <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-pink-400">
-              Chat Nexus
-            </span>
-            <div className="h-4 w-px bg-slate-700 mx-2" />
-            <span className="text-slate-400 font-medium">{currentRoom?.name || "Kanal Seçilmedi"}</span>
-          </div>
-          
-          {authUser && (
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 rounded-full border border-slate-700/50">
-                <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-                <span className="text-sm font-semibold text-slate-300">
-                  {authUser.displayName || authUser.username}
-                </span>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setProfileEditUser(authUser)} className="hover:bg-slate-800 text-slate-400">
-                <Settings className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => logout()} className="hover:bg-rose-500/10 text-slate-400 hover:text-rose-400">
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </div>
-          )}
-        </header>
-
-        <main className="flex-1 flex overflow-hidden">
-          {currentRoom ? (
-            <MainChatArea 
-              currentRoom={currentRoom} 
-              currentUser={authUser || { id: "loading", username: "Yükleniyor..." } as any}
-              replyToMessage={replyToMessage}
-              onClearReply={handleClearReply}
-              onReply={handleReply}
-              onStartDM={() => {}}
-            />
-          ) : (
-            <div className="flex-1 flex items-center justify-center bg-[#313338] text-slate-500 font-medium">
-               Henüz bir kanal seçilmedi veya yükleniyor...
-            </div>
-          )}
-          
-          {!isMobile && (
-            <div className="w-64 border-l border-slate-800 bg-slate-900/20">
-              <UserListSidebar 
-                onlineUsers={onlineUsers || []}
-                offlineUsers={offlineUsers || []}
-                currentUserId={authUser?.id || ""}
-                onEditProfile={setProfileEditUser}
-                onStartDM={() => {}}
-              />
-            </div>
-          )}
-        </main>
+      <div className="w-64 glass-card rounded-3xl overflow-hidden shrink-0">
+        <UserList onStartDM={(targetUser) => startDMMutation.mutate(targetUser)} />
       </div>
 
-      {/* Mobile User List Sidebar */}
-      {isMobile && (
-        <div className={`fixed inset-y-0 right-0 z-50 w-64 bg-slate-900 transform transition-transform duration-300 ${showUserSidebar ? 'translate-x-0' : 'translate-x-full'}`}>
-          <UserListSidebar 
-            onlineUsers={onlineUsers || []}
-            offlineUsers={offlineUsers || []}
-            currentUserId={authUser?.id || ""}
-            onEditProfile={setProfileEditUser}
-            onStartDM={() => {}}
-          />
-        </div>
-      )}
-
-      {/* Overlays */}
-      {isMobile && (showRoomSidebar || showUserSidebar) && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => { setShowRoomSidebar(false); setShowUserSidebar(false); }} />
-      )}
-
-      {profileEditUser && (
+      {editingProfile && (
         <ProfileEditModal
-          user={profileEditUser}
-          isOpen={!!profileEditUser}
-          onClose={() => setProfileEditUser(null)}
-          onProfileUpdate={() => queryClient.invalidateQueries({ queryKey: ["/api/user"] })}
+          user={editingProfile}
+          isOpen={!!editingProfile}
+          onClose={() => setEditingProfile(null)}
         />
       )}
     </div>

@@ -69,8 +69,8 @@ export default function MainChatArea({ currentRoom, currentUser, replyToMessage,
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-[#c6dfff]/10 to-[#f7c6e9]/10 relative">
-      <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-[#1e1f22]/40 backdrop-blur-md z-10">
+    <div className="flex flex-col h-full bg-transparent relative">
+      <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-white/10 dark:bg-black/20 z-10">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-slate-800 rounded-lg">
             <Hash className="h-5 w-5 text-blue-400" />

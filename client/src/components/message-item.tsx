@@ -3,9 +3,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Reply, Trash2, MoreHorizontal, User, ShieldCheck } from "lucide-react";
+import { Reply, Trash2, MoreHorizontal, User, ShieldCheck, ShieldAlert, Star } from "lucide-react";
 import type { MessageWithUser, User as UserType } from "@shared/schema";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { apiRequest } from "@/lib/queryClient";
 
 interface MessageItemProps {
   message: MessageWithUser;
@@ -20,12 +21,7 @@ export default function MessageItem({ message, currentUser, onReply, onStartDM }
 
   const deleteMessageMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/messages/${message.id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUser?.id }),
-      });
-      if (!response.ok) throw new Error("Mesaj silinemedi");
+      await apiRequest("DELETE", `/api/messages/${message.id}`, { userId: currentUser?.id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/rooms", message.roomId, "messages"] });
@@ -33,14 +29,19 @@ export default function MessageItem({ message, currentUser, onReply, onStartDM }
     }
   });
 
+  const promoteAdminMutation = useMutation({
+    mutationFn: async (level: number) => {
+      await apiRequest("POST", `/api/users/${message.user.id}/admin`, { level, adminId: currentUser?.id });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users/online"] });
+      toast({ title: "Başarılı", description: "Yönetici yetkileri güncellendi" });
+    }
+  });
+
   const banUserMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/users/${message.user.id}/ban`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adminId: currentUser?.id }),
-      });
-      if (!response.ok) throw new Error("Kullanıcı banlanamadı");
+      await apiRequest("POST", `/api/users/${message.user.id}/ban`, { adminId: currentUser?.id });
     },
     onSuccess: () => {
       toast({ title: "Başarılı", description: "Kullanıcı banlandı" });
@@ -50,7 +51,9 @@ export default function MessageItem({ message, currentUser, onReply, onStartDM }
   });
 
   const isAuthor = currentUser?.id === message.userId;
-  const isAdmin = currentUser?.isAdmin;
+  const isSuperAdmin = currentUser?.adminLevel === 2;
+  const isAltAdmin = currentUser?.adminLevel === 1;
+  const canDelete = isAuthor || isSuperAdmin || (isAltAdmin && message.user.adminLevel === 0);
 
   return (
     <div className="group flex flex-col space-y-1 hover:bg-white/5 px-4 py-2 -mx-4 rounded-xl transition-all relative">
@@ -80,9 +83,14 @@ export default function MessageItem({ message, currentUser, onReply, onStartDM }
             <span className="font-black text-white text-sm hover:underline cursor-pointer" onClick={() => onStartDM?.(message.user)}>
               {message.user.displayName || message.user.username}
             </span>
-            {message.user.isAdmin && (
+            {message.user.adminLevel === 2 && (
               <span className="bg-blue-500/20 text-blue-400 text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider border border-blue-500/30 flex items-center gap-1">
-                <ShieldCheck className="h-2 w-2" /> YÖNETİCİ
+                <ShieldCheck className="h-2 w-2" /> ANA ADMIN
+              </span>
+            )}
+            {message.user.adminLevel === 1 && (
+              <span className="bg-purple-500/20 text-purple-400 text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider border border-purple-500/30 flex items-center gap-1">
+                <ShieldAlert className="h-2 w-2" /> MODERATÖR
               </span>
             )}
             <span className="text-[10px] text-slate-500 font-bold">
@@ -96,28 +104,36 @@ export default function MessageItem({ message, currentUser, onReply, onStartDM }
           <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white bg-slate-900/50" onClick={() => onReply?.(message)}>
             <Reply className="h-4 w-4" />
           </Button>
-          {(isAuthor || isAdmin) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white bg-slate-900/50">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-white border-white/20 shadow-2xl z-[100]">
-                <DropdownMenuItem className="text-slate-900 font-bold hover:bg-slate-100 cursor-pointer" onClick={() => onReply?.(message)}>
-                  <Reply className="h-4 w-4 mr-2" /> Yanıtla
-                </DropdownMenuItem>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white bg-slate-900/50">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-white border-white/20 shadow-2xl z-[100] min-w-[160px]">
+              <DropdownMenuItem className="text-slate-900 font-bold hover:bg-slate-100 cursor-pointer" onClick={() => onReply?.(message)}>
+                <Reply className="h-4 w-4 mr-2" /> Yanıtla
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-slate-900 font-bold hover:bg-slate-100 cursor-pointer" onClick={() => onStartDM?.(message.user)}>
+                <User className="h-4 w-4 mr-2" /> DM Gönder
+              </DropdownMenuItem>
+              {canDelete && (
                 <DropdownMenuItem className="text-rose-600 font-bold hover:bg-rose-50 cursor-pointer" onClick={() => deleteMessageMutation.mutate()}>
                   <Trash2 className="h-4 w-4 mr-2" /> Sil
                 </DropdownMenuItem>
-                {isAdmin && !isAuthor && (
+              )}
+              {isSuperAdmin && !isAuthor && (
+                <>
+                  <DropdownMenuItem className="text-blue-600 font-bold hover:bg-blue-50 cursor-pointer" onClick={() => promoteAdminMutation.mutate(message.user.adminLevel === 1 ? 0 : 1)}>
+                    <Star className="h-4 w-4 mr-2" /> {message.user.adminLevel === 1 ? 'Yetki Al' : 'Mod Yap'}
+                  </DropdownMenuItem>
                   <DropdownMenuItem className="text-red-700 font-bold hover:bg-red-50 cursor-pointer" onClick={() => banUserMutation.mutate()}>
                     <Trash2 className="h-4 w-4 mr-2" /> Banla
                   </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

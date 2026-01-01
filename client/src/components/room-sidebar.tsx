@@ -87,7 +87,7 @@ export default function RoomSidebar({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#1e1f22]/95 backdrop-blur-xl border-r border-white/5 font-sans">
+    <div className="flex flex-col h-full bg-transparent border-r border-white/5 font-sans">
       <div className="p-4 border-b border-white/5 bg-[#2b2d31]/50">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -166,7 +166,7 @@ export default function RoomSidebar({
         </div>
       </ScrollArea>
 
-      <div className="p-4 bg-[#232428]/80 border-t border-white/5">
+      <div className="p-4 bg-transparent border-t border-white/5">
         <div className="flex items-center justify-between p-2 rounded-xl bg-black/20 border border-white/5">
           <div className="flex items-center gap-2.5 min-w-0">
             <Avatar className="h-8 w-8 border border-white/10 shadow-lg">

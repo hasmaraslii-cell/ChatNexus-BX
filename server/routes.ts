@@ -327,6 +327,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/users/:id/admin", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { level, adminId } = req.body;
+      const admin = await storage.getUser(adminId);
+      if (admin?.adminLevel !== 2) return res.status(403).json({ message: "Sadece ana yöneticiler admin atayabilir" });
+      await storage.updateAdminLevel(id, level);
+      res.json({ message: "Admin seviyesi güncellendi" });
+    } catch (error) {
+      res.status(500).json({ message: "İşlem başarısız" });
+    }
+  });
   app.post("/api/users/:id/ban", async (req, res) => {
     try {
       const { id } = req.params;

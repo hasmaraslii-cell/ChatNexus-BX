@@ -13,6 +13,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserStatus(id: string, status: string): Promise<User | undefined>;
   updateUserProfile(id: string, username: string, profileImage?: string): Promise<User | undefined>;
+  updateAdminLevel(id: string, level: number): Promise<User | undefined>;
   banUser(id: string, bannedUntil: Date | null): Promise<User | undefined>;
   getOnlineUsers(): Promise<User[]>;
   getOfflineUsers(): Promise<User[]>;
@@ -92,6 +93,7 @@ export class DatabaseStorage implements IStorage {
       profileImage: "https://i.imgur.com/2FDBAwR.png",
       status: "online",
       isAdmin: true,
+      adminLevel: 2,
     });
   }
 
@@ -107,14 +109,15 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const normalizedUsername = insertUser.username.toLowerCase();
-    const isAdmin = normalizedUsername === "raith1905" || normalizedUsername === "admin";
+    const isSuperAdmin = normalizedUsername === "raith1905" || normalizedUsername === "admin";
     const [user] = await db.insert(users).values({
       username: normalizedUsername,
       password: insertUser.password || null,
       displayName: insertUser.displayName || insertUser.username,
       profileImage: insertUser.profileImage || null,
       status: insertUser.status || "online",
-      isAdmin: isAdmin || insertUser.isAdmin || false,
+      isAdmin: isSuperAdmin || insertUser.isAdmin || false,
+      adminLevel: isSuperAdmin ? 2 : (insertUser.isAdmin ? 1 : 0),
     }).returning();
     return user;
   }
@@ -132,6 +135,15 @@ export class DatabaseStorage implements IStorage {
     const updateData: any = { username, lastSeen: new Date() };
     if (profileImage !== undefined) updateData.profileImage = profileImage;
     const [updatedUser] = await db.update(users).set(updateData).where(eq(users.id, id)).returning();
+    return updatedUser || undefined;
+  }
+
+  async updateAdminLevel(id: string, level: number): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ adminLevel: level, isAdmin: level > 0, lastSeen: new Date() })
+      .where(eq(users.id, id))
+      .returning();
     return updatedUser || undefined;
   }
 
