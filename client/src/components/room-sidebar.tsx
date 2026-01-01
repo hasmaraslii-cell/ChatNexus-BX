@@ -25,7 +25,7 @@ interface RoomSidebarProps {
 }
 
 export default function RoomSidebar({ 
-  rooms, 
+  rooms = [], 
   currentRoom, 
   currentUser, 
   onRoomChange,
@@ -48,12 +48,21 @@ export default function RoomSidebar({
 
   const createRoomMutation = useMutation({
     mutationFn: async (name: string) => {
-      const res = await apiRequest("POST", "/api/rooms", { name, description: "" });
+      const res = await apiRequest("POST", "/api/rooms", { 
+        name, 
+        description: `${name} kanalı`,
+        isDM: false,
+        participants: null
+      });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (newRoom) => {
       queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
       toast({ title: "Başarılı", description: "Kanal oluşturuldu" });
+      onRoomChange(newRoom);
+    },
+    onError: (err: any) => {
+      toast({ title: "Hata", description: err.message || "Kanal oluşturulamadı", variant: "destructive" });
     }
   });
 
@@ -90,8 +99,8 @@ export default function RoomSidebar({
               <h2 className="font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-pink-400 tracking-tight leading-none mt-0.5 text-sm uppercase">NEXUS</h2>
             </div>
           </div>
-          {currentUser.isAdmin && (
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCreateRoom}>
+          {currentUser?.isAdmin && (
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white hover:bg-white/10" onClick={handleCreateRoom}>
               <Plus className="h-4 w-4" />
             </Button>
           )}
@@ -161,14 +170,14 @@ export default function RoomSidebar({
         <div className="flex items-center justify-between p-2 rounded-xl bg-black/20 border border-white/5">
           <div className="flex items-center gap-2.5 min-w-0">
             <Avatar className="h-8 w-8 border border-white/10 shadow-lg">
-              <AvatarImage src={currentUser.profileImage || ""} className="object-cover" />
+              <AvatarImage src={currentUser?.profileImage || ""} className="object-cover" />
               <AvatarFallback className="bg-slate-800 text-[10px] font-bold text-slate-400">
-                {(currentUser.displayName || currentUser.username).charAt(0).toUpperCase()}
+                {(currentUser?.displayName || currentUser?.username || "U").charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-bold text-white truncate leading-tight">
-                {currentUser.displayName || currentUser.username}
+                {currentUser?.displayName || currentUser?.username}
               </span>
               <div className="flex items-center gap-1">
                 <div className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]" />

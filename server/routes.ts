@@ -23,6 +23,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
   );
 
+  app.post("/api/rooms", async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ message: "Sadece yöneticiler kanal oluşturabilir" });
+      const roomData = insertRoomSchema.parse(req.body);
+      const room = await storage.createRoom(roomData);
+      res.json(room);
+    } catch (error) {
+      res.status(400).json({ message: "Kanal oluşturulamadı" });
+    }
+  });
   // Auth routes
   app.post("/api/register", async (req, res) => {
     try {

@@ -44,6 +44,8 @@ export default function MessageItem({ message, currentUser, onReply, onStartDM }
     },
     onSuccess: () => {
       toast({ title: "Başarılı", description: "Kullanıcı banlandı" });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/online"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/offline"] });
     }
   });
 
@@ -90,7 +92,7 @@ export default function MessageItem({ message, currentUser, onReply, onStartDM }
           <p className="text-slate-300 text-sm leading-relaxed break-words">{message.content}</p>
         </div>
 
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-4 flex gap-1">
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-4 flex gap-1 z-20">
           <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white bg-slate-900/50" onClick={() => onReply?.(message)}>
             <Reply className="h-4 w-4" />
           </Button>
@@ -101,12 +103,15 @@ export default function MessageItem({ message, currentUser, onReply, onStartDM }
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-[#1e1f22] border-white/5">
-                <DropdownMenuItem className="text-rose-400" onClick={() => deleteMessageMutation.mutate()}>
+              <DropdownMenuContent align="end" className="bg-white border-white/20 shadow-2xl z-[100]">
+                <DropdownMenuItem className="text-slate-900 font-bold hover:bg-slate-100 cursor-pointer" onClick={() => onReply?.(message)}>
+                  <Reply className="h-4 w-4 mr-2" /> Yanıtla
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-rose-600 font-bold hover:bg-rose-50 cursor-pointer" onClick={() => deleteMessageMutation.mutate()}>
                   <Trash2 className="h-4 w-4 mr-2" /> Sil
                 </DropdownMenuItem>
                 {isAdmin && !isAuthor && (
-                  <DropdownMenuItem className="text-red-600" onClick={() => banUserMutation.mutate()}>
+                  <DropdownMenuItem className="text-red-700 font-bold hover:bg-red-50 cursor-pointer" onClick={() => banUserMutation.mutate()}>
                     <Trash2 className="h-4 w-4 mr-2" /> Banla
                   </DropdownMenuItem>
                 )}
