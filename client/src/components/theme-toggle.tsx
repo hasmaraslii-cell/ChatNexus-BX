@@ -1,39 +1,35 @@
-import { useTheme } from "@/hooks/use-theme";
+import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
-
-  const getIcon = () => {
-    if (theme === "light") {
-      return <Moon className="w-5 h-5" />;
-    } else if (theme === "dark") {
-      return <Monitor className="w-5 h-5" />;
-    } else {
-      return <Sun className="w-5 h-5" />;
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      return (document.documentElement.classList.contains("dark") ? "dark" : "light");
     }
-  };
+    return "dark";
+  });
 
-  const getTitle = () => {
-    if (theme === "light") {
-      return "Koyu temaya geç";
-    } else if (theme === "dark") {
-      return "Sistem varsayılanına geç";
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
     } else {
-      return "Açık temaya geç";
+      root.classList.remove("dark");
     }
-  };
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   return (
     <Button
       variant="ghost"
-      size="sm" 
-      onClick={toggleTheme}
-      className="text-[var(--discord-light)]/70 hover:text-[var(--discord-light)] hover:bg-[var(--discord-dark)] p-2"
-      title={getTitle()}
+      size="icon"
+      className="h-8 w-8 text-slate-400 hover:text-white hover:bg-white/10"
+      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
     >
-      {getIcon()}
+      <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <span className="sr-only">Tema Değiştir</span>
     </Button>
   );
 }

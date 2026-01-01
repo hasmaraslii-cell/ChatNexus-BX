@@ -88,7 +88,7 @@ export default function Chat() {
         {authUser && (
           <RoomSidebar 
             rooms={rooms || []} 
-            currentRoom={currentRoom || { id: -1, name: "Yükleniyor..." } as Room} 
+            currentRoom={currentRoom || { id: "loading", name: "Yükleniyor..." } as any} 
             currentUser={authUser} 
             onRoomChange={handleRoomChange}
             onLogout={logout}
@@ -106,7 +106,7 @@ export default function Chat() {
               Chat Nexus
             </span>
             <div className="h-4 w-px bg-slate-700 mx-2" />
-            <span className="text-slate-400 font-medium">{currentRoom?.name || "Yükleniyor..."}</span>
+            <span className="text-slate-400 font-medium">{currentRoom?.name || "Kanal Seçilmedi"}</span>
           </div>
           
           {authUser && (
@@ -128,27 +128,27 @@ export default function Chat() {
         </header>
 
         <main className="flex-1 flex overflow-hidden">
-          {currentRoom && authUser ? (
+          {currentRoom ? (
             <MainChatArea 
               currentRoom={currentRoom} 
-              currentUser={authUser}
+              currentUser={authUser || { id: "loading", username: "Yükleniyor..." } as any}
               replyToMessage={replyToMessage}
               onClearReply={handleClearReply}
               onReply={handleReply}
               onStartDM={() => {}}
             />
           ) : (
-            <div className="flex-1 flex items-center justify-center bg-[#313338]">
-               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500" />
+            <div className="flex-1 flex items-center justify-center bg-[#313338] text-slate-500 font-medium">
+               Henüz bir kanal seçilmedi veya yükleniyor...
             </div>
           )}
           
-          {!isMobile && authUser && (
+          {!isMobile && (
             <div className="w-64 border-l border-slate-800 bg-slate-900/20">
               <UserListSidebar 
                 onlineUsers={onlineUsers || []}
                 offlineUsers={offlineUsers || []}
-                currentUserId={authUser.id}
+                currentUserId={authUser?.id || ""}
                 onEditProfile={setProfileEditUser}
                 onStartDM={() => {}}
               />
@@ -158,12 +158,12 @@ export default function Chat() {
       </div>
 
       {/* Mobile User List Sidebar */}
-      {isMobile && authUser && (
+      {isMobile && (
         <div className={`fixed inset-y-0 right-0 z-50 w-64 bg-slate-900 transform transition-transform duration-300 ${showUserSidebar ? 'translate-x-0' : 'translate-x-full'}`}>
           <UserListSidebar 
             onlineUsers={onlineUsers || []}
             offlineUsers={offlineUsers || []}
-            currentUserId={authUser.id}
+            currentUserId={authUser?.id || ""}
             onEditProfile={setProfileEditUser}
             onStartDM={() => {}}
           />
@@ -175,12 +175,14 @@ export default function Chat() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => { setShowRoomSidebar(false); setShowUserSidebar(false); }} />
       )}
 
-      <ProfileEditModal
-        user={profileEditUser}
-        isOpen={!!profileEditUser}
-        onClose={() => setProfileEditUser(null)}
-        onProfileUpdate={() => queryClient.invalidateQueries({ queryKey: ["/api/user"] })}
-      />
+      {profileEditUser && (
+        <ProfileEditModal
+          user={profileEditUser}
+          isOpen={!!profileEditUser}
+          onClose={() => setProfileEditUser(null)}
+          onProfileUpdate={() => queryClient.invalidateQueries({ queryKey: ["/api/user"] })}
+        />
+      )}
     </div>
   );
 }

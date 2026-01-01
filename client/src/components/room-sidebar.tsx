@@ -15,9 +15,9 @@ import { useQuery } from "@tanstack/react-query";
 import type { Room, User as UserType } from "@shared/schema";
 
 interface RoomSidebarProps {
-  rooms: Room[];
-  currentRoom: Room;
-  currentUser: UserType;
+  rooms: any[];
+  currentRoom: any;
+  currentUser: any;
   onRoomChange: (room: Room) => void;
   onLogout: () => void;
   onEditProfile: (user: UserType) => void;
