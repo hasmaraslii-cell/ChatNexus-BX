@@ -315,6 +315,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/users/:id/ban", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { adminId } = req.body;
+      const admin = await storage.getUser(adminId);
+      if (!admin?.isAdmin) return res.status(403).json({ message: "Yetkisiz işlem" });
+      await storage.updateUserStatus(id, "banned");
+      res.json({ message: "Kullanıcı banlandı" });
+    } catch (error) {
+      res.status(500).json({ message: "Ban işlemi başarısız" });
+    }
+  });
   app.delete("/api/messages/:id", async (req, res) => {
     try {
       const { id } = req.params;
